@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, AreaChart, Area,
@@ -47,18 +47,8 @@ const PORTFOLIO1_FALLBACK = {
   AMZN:242.67, "BRK.B":492.00, META:600.29, GOOGL:366.46, QQQ:533.00,
 };
 
-const PORTFOLIO2_TRADES = [
-  { ticker:"TSLA", name:"Tesla Inc.",             buyPrice:311.21, allocation:25000, color:"#e11d48", buyDate:"Aug 1, 2026", type:"Stock", sector:"Consumer Disc.",          beta:2.05 },
-  { ticker:"AMD",  name:"Advanced Micro Devices", buyPrice:485.39, allocation:25000, color:"#0ea5e9", buyDate:"Aug 1, 2026", type:"Stock", sector:"Technology",              beta:1.85 },
-  { ticker:"JPM",  name:"JPMorgan Chase & Co.",   buyPrice:350.85, allocation:25000, color:"#a3e635", buyDate:"Aug 1, 2026", type:"Stock", sector:"Financials",              beta:1.10 },
-  { ticker:"DIS",  name:"Walt Disney Co.",        buyPrice:96.19,  allocation:25000, color:"#fbbf24", buyDate:"Aug 1, 2026", type:"Stock", sector:"Communication Services",  beta:1.05 },
-];
-
-const PORTFOLIO2_FALLBACK = { TSLA:311.21, AMD:485.39, JPM:350.85, DIS:96.19 };
-
 const PORTFOLIOS = {
   portfolio1: { key:"portfolio1", label:"Portfolio 1", trades:PORTFOLIO1_TRADES, fallback:PORTFOLIO1_FALLBACK, hasHistory:true, startDate:"2025-06-26" },
-  portfolio2: { key:"portfolio2", label:"Portfolio 2", trades:PORTFOLIO2_TRADES, fallback:PORTFOLIO2_FALLBACK, hasHistory:false, startDate:"2026-08-01" },
 };
 
 const MONTHLY_HISTORY = [
@@ -75,6 +65,7 @@ const MONTHLY_HISTORY = [
   { month:"Apr '26", label:"Apr 30", VOO:631.00, NVDA:192.00, AAPL:274.00, MSFT:395.00, AMZN:240.00, "BRK.B":479.00, META:575.00, GOOGL:348.00, QQQ:null,   sp500:6040, note:"S&P +10.42%! Tariff walkback. Index crosses 7,000 on Apr 15." },
   { month:"May '26", label:"May 31", VOO:669.00, NVDA:232.00, AAPL:310.00, MSFT:413.00, AMZN:266.00, "BRK.B":487.00, META:610.00, GOOGL:395.00, QQQ:490.00, sp500:7413, note:"QQQ added @ $490. NVDA ATH $235.47 May 14. GOOGL ATH $402 May 13." },
   { month:"Jun '26", label:"Jun 30", VOO:678.00, NVDA:207.00, AAPL:302.00, MSFT:392.00, AMZN:248.00, "BRK.B":490.00, META:595.00, GOOGL:372.00, QQQ:516.00, sp500:7474, note:"Tech consolidates -1.1%. AAPL hits ATH $317.40 Jun 8." },
+  { month:"Jul '26", label:"Jul 31", VOO:692.00, NVDA:224.00, AAPL:308.00, MSFT:405.00, AMZN:256.00, "BRK.B":495.00, META:615.00, GOOGL:385.00, QQQ:535.00, sp500:7645, note:"Q2 earnings season broadly strong. NVDA rebounds 8% on datacenter demand beat. QQQ crosses $530 for the first time." },
 ];
 
 const MONTHLY_ANALYSIS = [
@@ -91,6 +82,7 @@ const MONTHLY_ANALYSIS = [
   { month:"Apr '26", spReturn:"+10.42%", summary:"One of the greatest recoveries in recent history. Tariff walkback triggered a massive V-shaped rally. S&P +10.42%. Index crossed 7,000 for first time April 15. GOOGL (bought in fear) surged 18%.", best:{ticker:"GOOGL",reason:"Up 18% from $310 buy — tariff dip paying off"}, worst:{ticker:"META",reason:"Lagged the recovery — still below $680 entry"}, events:["Tariff walkback — markets explode","S&P +10.42% — one of best months in decades","S&P crosses 7,000 on Apr 15"], change:"+$18,200" },
   { month:"May '26", spReturn:"+5.0%", summary:"AI mania peaked. NVDA hit ATH $235.47 May 14 — up 49% from your buy. GOOGL hit ATH $402.38 May 13. AMZN hit ATH $278.56. You added QQQ on May 1 to ride momentum. Portfolio at its high.", best:{ticker:"NVDA",reason:"ALL-TIME HIGH $235.47 May 14 — up 49%"}, worst:{ticker:"META",reason:"Recovered to $610 but still below $680 entry"}, events:["NVDA ATH $235.47 May 14","GOOGL ATH $402.38 May 13","AMZN ATH $278.56 May 5","Trade 4: QQQ added @ $490 May 1"], change:"+$14,600" },
   { month:"Jun '26", spReturn:"-1.1%", summary:"Mild tech pullback after May highs. NVDA gave back 12% from ATH. But AAPL hit ATH $317.40 on June 8 — up 58% from your buy. S&P held well above 7,000. QQQ gained 5% in first full month.", best:{ticker:"AAPL",reason:"ATH $317.40 Jun 8 — up 58% from your buy"}, worst:{ticker:"NVDA",reason:"Pulled back 12% from ATH on profit taking"}, events:["AAPL ATH $317.40 Jun 8","NVDA -12% from ATH","S&P -1.1% healthy consolidation"], change:"+$2,800" },
+  { month:"Jul '26", spReturn:"+2.29%", summary:"A strong earnings season lifted the whole portfolio. NVDA rebounded 8% on a datacenter demand beat, erasing most of June's pullback. GOOGL and QQQ both pushed to new highs on continued AI infrastructure spending. Broad-based gains across all nine positions.", best:{ticker:"NVDA",reason:"Rebounded 8% on strong Q2 datacenter earnings"}, worst:{ticker:"BRK.B",reason:"Steady but the slowest mover in a growth-led month"}, events:["Q2 earnings season broadly beats estimates","NVDA +8% on datacenter demand beat","QQQ crosses $530 for the first time"], change:"+$5,600" },
 ];
 
 const EDUCATION_CONTENT = [
@@ -109,7 +101,7 @@ const CHANGELOG = [
 ];
 
 const ROADMAP = [
-  { quarter:"Q3 2026", status:"current", items:["User portfolio builder (add your own stocks)","Real-time price alerts","PDF export of portfolio report","Mobile app (iOS)","Backfill Portfolio 2 monthly history to enable Sharpe/Alpha/Max Drawdown"] },
+  { quarter:"Q3 2026", status:"current", items:["User portfolio builder (add your own stocks)","Real-time price alerts","PDF export of portfolio report","Mobile app (iOS)"] },
   { quarter:"Q4 2026", status:"planned", items:["Social portfolio sharing","Options tracking","Dividend reinvestment modeling","Tax loss harvesting calculator"] },
   { quarter:"Q1 2027", status:"future", items:["Multi-currency support","International markets","AI-powered rebalancing suggestions","Broker account integration"] },
 ];
@@ -233,10 +225,6 @@ export default function App() {
   const [monthlyIdx, setMonthlyIdx] = useState(MONTHLY_HISTORY.length-1);
   const [eduIdx, setEduIdx] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState({});
-  const [aiMessages, setAiMessages] = useState([{role:"assistant", content:"Hi! I'm your AI Portfolio Assistant. I have full access to your portfolio data — ask me anything about your investments, returns, risks, or market events."}]);
-  const [aiInput, setAiInput] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
-  const chatRef = useRef(null);
 
   // accounts / leaderboard
   const [user, setUser] = useState(null);
@@ -256,7 +244,6 @@ export default function App() {
   }, []);
 
   useEffect(()=>{ fetchAll(activePortfolio); const i=setInterval(()=>fetchAll(activePortfolio),5*60*1000); return ()=>clearInterval(i); },[activePortfolio, fetchAll]);
-  useEffect(()=>{ if(chatRef.current) chatRef.current.scrollTop=chatRef.current.scrollHeight; },[aiMessages]);
   useEffect(()=>{
     supabase.auth.getSession().then(({data})=>{ if(data.session) loadMyPortfolio(data.session.user); });
     supabase.from("portfolios").select("*",{count:"exact",head:true}).then(({count})=>setCommunityCount(count??0));
@@ -323,67 +310,6 @@ export default function App() {
     { label:"Risk Level (Beta)", score:portfolioBeta<1.3?20:12, max:25, note:`Portfolio beta ${round2(portfolioBeta)} — ${portfolioBeta<1.2?"moderate risk":"slightly aggressive"}` },
   ];
 
-  // AI Assistant
-  const buildPortfolioContext = () => `
-You are an AI assistant for PortfolioTrack, a personal investment dashboard belonging to Jon Ong.
-
-PORTFOLIO SUMMARY (${P.label}):
-- Total Deployed: $${totalDeployed.toLocaleString()} starting ${P.trades[0].buyDate}
-- Current Value: $${Math.round(totalCurrent).toLocaleString()}
-- Total Return: ${round2(totalPct)}% ($${Math.round(totalGL).toLocaleString()})
-- CAGR: ${round2(cagr)}%
-- Sharpe Ratio: ${sharpe===null?"not enough history yet":round2(sharpe)}
-- Portfolio Beta: ${round2(portfolioBeta)}
-- Alpha vs S&P 500: ${alpha===null?"not enough history yet":round2(alpha)+"%"}
-- Maximum Drawdown: ${maxDD===null?"not enough history yet":round2(maxDD)+"%"}
-- Portfolio Health Score: ${healthScore}/100
-- S&P 500 return same period: ${sp500Return===null?"not enough history yet":round2(sp500Return)+"%"}
-
-HOLDINGS (ticker: current return%):
-${holdings.map(h=>`- ${h.ticker} (${h.name}): bought ${h.buyDate} @ $${h.buyPrice}, now $${round2(h.currentPrice)}, return: ${round2(h.pctChange)}%`).join("\n")}
-
-SECTOR ALLOCATION:
-${sectorData.map(s=>`- ${s.name}: ${s.pct}%`).join("\n")}
-${P.hasHistory ? `
-KEY MARKET EVENTS:
-- Mar 2026: Liberation Day tariff crash, S&P -5.75%
-- Apr 2026: Tariff walkback, S&P +10.42%
-- May 2026: NVDA ATH $235.47, AAPL near ATH
-- Jun 2026: Tech pullback, AAPL ATH $317.40` : ""}
-
-Answer questions about this portfolio concisely and helpfully. Be specific with numbers. Keep responses under 200 words.
-`;
-
-  // NOTE: This calls the Anthropic API directly from the browser with no auth header and
-  // no backend in front of it — it will fail as-is (401/CORS). A real Claude API key must
-  // never be shipped in frontend code. This needs a small server-side proxy (a Vercel
-  // serverless function or Supabase Edge Function) that holds the key and forwards the
-  // request. Flagging this rather than silently leaving it looking functional.
-  const sendAiMessage = async () => {
-    if(!aiInput.trim()||aiLoading) return;
-    const userMsg = {role:"user", content:aiInput};
-    setAiMessages(prev=>[...prev,userMsg]);
-    setAiInput(""); setAiLoading(true);
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          model:"claude-sonnet-4-6",
-          max_tokens:1000,
-          system: buildPortfolioContext(),
-          messages:[...aiMessages.filter(m=>m.role!=="assistant"||aiMessages.indexOf(m)>0), userMsg].map(m=>({role:m.role,content:m.content}))
-        })
-      });
-      const data = await res.json();
-      const reply = data.content?.[0]?.text || "Sorry, I couldn't process that.";
-      setAiMessages(prev=>[...prev,{role:"assistant",content:reply}]);
-    } catch {
-      setAiMessages(prev=>[...prev,{role:"assistant",content:"This assistant needs a backend proxy to reach Claude securely — that part isn't wired up yet. Ask Jon's dashboard maintainer to add a serverless endpoint that holds the API key server-side."}]);
-    }
-    setAiLoading(false);
-  };
-
   const deployedAt = (m) => TRADES.reduce((s,h)=>m[h.ticker]!==null?s+h.allocation:s,0);
 
   // TAB STYLES
@@ -396,8 +322,8 @@ Answer questions about this portfolio concisely and helpfully. Be specific with 
 
   const TABS = [
     ["landing","Home"],["dashboard","Dashboard"],["analytics","Analytics"],
-    ["health","Health Score"],["ai","AI Assistant"],["monthly","Monthly"],
-    ["education","Learn"],["roadmap","Roadmap"],
+    ["health","Health Score"],["monthly","Monthly"],
+    ["education","Learn"],
     ["leaderboard","Leaderboard"],["myportfolio","My Portfolio"],
   ];
 
@@ -444,16 +370,18 @@ Answer questions about this portfolio concisely and helpfully. Be specific with 
               )}
             </div>
           </div>
-          <div style={{display:"flex",gap:8,marginBottom:10}}>
-            {Object.values(PORTFOLIOS).map(pf=>(
-              <button key={pf.key} onClick={()=>setActivePortfolio(pf.key)} style={{
-                padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",
-                border:activePortfolio===pf.key?`1px solid ${COLORS.accent}`:`1px solid ${COLORS.border}`,
-                background:activePortfolio===pf.key?"#191b4a":COLORS.card,
-                color:activePortfolio===pf.key?COLORS.accentLight:COLORS.muted,
-              }}>{pf.label}</button>
-            ))}
-          </div>
+          {Object.keys(PORTFOLIOS).length>1 && (
+            <div style={{display:"flex",gap:8,marginBottom:10}}>
+              {Object.values(PORTFOLIOS).map(pf=>(
+                <button key={pf.key} onClick={()=>setActivePortfolio(pf.key)} style={{
+                  padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",
+                  border:activePortfolio===pf.key?`1px solid ${COLORS.accent}`:`1px solid ${COLORS.border}`,
+                  background:activePortfolio===pf.key?"#191b4a":COLORS.card,
+                  color:activePortfolio===pf.key?COLORS.accentLight:COLORS.muted,
+                }}>{pf.label}</button>
+              ))}
+            </div>
+          )}
           <div style={{display:"flex",gap:0,overflowX:"auto"}}>
             {TABS.map(([id,label])=>(
               <button key={id} onClick={()=>setTab(id)} className="tab-btn" style={T(id)}>{label}</button>
@@ -476,14 +404,17 @@ Answer questions about this portfolio concisely and helpfully. Be specific with 
                 Track. Analyze.<br/><span style={{background:"linear-gradient(135deg,#6366f1,#34d399)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Understand.</span>
               </h1>
               <p style={{fontSize:16,color:COLORS.muted,maxWidth:520,margin:"0 auto 32px",lineHeight:1.7}}>
-                PortfolioTrack turns your real investment data into institutional-grade analysis — CAGR, Sharpe Ratio, Alpha, Beta, and AI-powered insights, all in one place.
+                PortfolioTrack turns your real investment data into institutional-grade analysis — CAGR, Sharpe Ratio, Alpha, Beta, and a live-tracked leaderboard, all in one place.
               </p>
               <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
                 <button onClick={()=>setTab("dashboard")} style={{padding:"12px 28px",borderRadius:10,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>
                   View Dashboard →
                 </button>
-                <button onClick={()=>setTab("ai")} style={{padding:"12px 28px",borderRadius:10,background:COLORS.card,border:`1px solid ${COLORS.border}`,color:COLORS.text,fontSize:14,fontWeight:600,cursor:"pointer"}}>
-                  Ask AI Assistant
+                <button onClick={()=>setTab("myportfolio")} style={{padding:"12px 28px",borderRadius:10,background:COLORS.card,border:`1px solid ${COLORS.border}`,color:COLORS.text,fontSize:14,fontWeight:600,cursor:"pointer"}}>
+                  Create a Personalized Portfolio
+                </button>
+                <button onClick={()=>setTab("leaderboard")} style={{padding:"12px 28px",borderRadius:10,background:COLORS.card,border:`1px solid ${COLORS.border}`,color:COLORS.text,fontSize:14,fontWeight:600,cursor:"pointer"}}>
+                  View Leaderboard
                 </button>
               </div>
             </div>
@@ -512,10 +443,10 @@ Answer questions about this portfolio concisely and helpfully. Be specific with 
                 {[
                   {icon:"📊",title:"Advanced Analytics",desc:"CAGR, Sharpe Ratio, Beta, Alpha, Max Drawdown — the metrics professionals use, applied to your real portfolio.",tab:"analytics"},
                   {icon:"🏥",title:"Portfolio Health Score",desc:"A 0-100 score evaluating diversification, sector balance, concentration risk, and asset allocation with plain-English explanations.",tab:"health"},
-                  {icon:"🤖",title:"AI Assistant",desc:"Ask questions about your portfolio in plain English. Why did it drop? How diversified am I? The AI knows your data.",tab:"ai"},
+                  {icon:"💼",title:"My Portfolio",desc:"Create your own free account, start with $100,000, and build a real portfolio with live-updating prices and gain/loss.",tab:"myportfolio"},
                   {icon:"📅",title:"Monthly Analysis",desc:"Detailed narrative of every month — best performer, worst performer, key market events, and portfolio impact.",tab:"monthly"},
                   {icon:"📚",title:"Education Center",desc:"Learn CAGR, Sharpe Ratio, Beta, Alpha, and Diversification with interactive examples and quizzes.",tab:"education"},
-                  {icon:"🗺️",title:"Public Roadmap",desc:"See what's coming next, track development progress, and follow the changelog of every improvement.",tab:"roadmap"},
+                  {icon:"🏆",title:"Leaderboard",desc:"See how your portfolio stacks up against everyone else who started with the same $100,000.",tab:"leaderboard"},
                 ].map((f,i)=>(
                   <div key={i} className="card-hover" onClick={()=>setTab(f.tab)} style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"20px",cursor:"pointer"}}>
                     <div style={{fontSize:24,marginBottom:10}}>{f.icon}</div>
@@ -547,6 +478,75 @@ Answer questions about this portfolio concisely and helpfully. Be specific with 
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:COLORS.muted}}>
                   <div style={{width:16,height:2,background:COLORS.muted,borderTop:"2px dashed"}} /> S&P 500
+                </div>
+              </div>
+            </div>
+
+            {/* ── Roadmap & Changelog (moved from its own tab to the end of Home) ── */}
+            <div style={{marginTop:48}}>
+              <div style={{fontSize:11,color:COLORS.dim,textTransform:"uppercase",letterSpacing:"0.12em",textAlign:"center",marginBottom:24}}>What's Been Built, What's Next</div>
+
+              {/* Roadmap */}
+              <div style={{marginBottom:32}}>
+                <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:16}}>Development Roadmap</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:14}}>
+                  {ROADMAP.map((q,i)=>(
+                    <div key={i} style={{background:COLORS.card,border:`1px solid ${q.status==="current"?COLORS.accent:COLORS.border}`,borderTop:`3px solid ${q.status==="current"?COLORS.accent:q.status==="planned"?COLORS.yellow:"#1a2540"}`,borderRadius:12,padding:"16px 18px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                        <div style={{fontSize:14,fontWeight:700,color:COLORS.text}}>{q.quarter}</div>
+                        <Badge text={q.status==="current"?"In Progress":q.status==="planned"?"Planned":"Future"} color={q.status==="current"?COLORS.green:q.status==="planned"?COLORS.yellow:COLORS.muted} bg={q.status==="current"?"#0a2a1a":q.status==="planned"?"#2a1a0a":"#1a2540"} />
+                      </div>
+                      {q.items.map((item,j)=>(
+                        <div key={j} style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:8}}>
+                          <div style={{width:5,height:5,borderRadius:"50%",background:q.status==="current"?COLORS.accent:COLORS.dim,flexShrink:0,marginTop:4}} />
+                          <div style={{fontSize:12,color:q.status==="current"?COLORS.text:COLORS.muted,lineHeight:1.4}}>{item}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Changelog */}
+              <div>
+                <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:16}}>Changelog</div>
+                {CHANGELOG.map((c,i)=>(
+                  <div key={i} style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"16px 20px",marginBottom:12}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+                      <Badge text={`v${c.version}`} color={COLORS.accentLight} bg="#191b4a" />
+                      <Badge text={c.type==="major"?"Major Release":"Minor Update"} color={c.type==="major"?COLORS.green:COLORS.yellow} bg={c.type==="major"?"#0a2a1a":"#2a1a0a"} />
+                      <span style={{fontSize:11,color:COLORS.dim}}>{c.date}</span>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                      {c.notes.map((n,j)=>(
+                        <div key={j} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                          <span style={{fontSize:11,color:COLORS.accent,marginTop:1}}>+</span>
+                          <span style={{fontSize:12,color:"#94a3b8",lineHeight:1.4}}>{n}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Impact metrics */}
+              <div style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"18px 22px",marginTop:8}}>
+                <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:14}}>Platform Stats</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:14}}>
+                  {[
+                    {label:"Portfolios Tracked",value:"1",sub:"Jon Ong"},
+                    {label:"Positions Monitored",value:"9",sub:"across 4 trades"},
+                    {label:"Months of Data",value:"14",sub:"Jun '25 → Now"},
+                    {label:"Metrics Calculated",value:"10+",sub:"per portfolio"},
+                    {label:"Features Shipped",value:"v2.1",sub:"this session"},
+                    {label:"Community Portfolios",value:communityCount!==null?String(communityCount):"—",sub:"and counting"},
+                  ].map((s,i)=>(
+                    <div key={i} style={{textAlign:"center"}}>
+                      <div style={{fontSize:24,fontWeight:800,color:COLORS.accentLight}}>{s.value}</div>
+                      <div style={{fontSize:10,color:COLORS.text,fontWeight:600,marginTop:2}}>{s.label}</div>
+                      <div style={{fontSize:10,color:COLORS.dim}}>{s.sub}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -830,73 +830,6 @@ Answer questions about this portfolio concisely and helpfully. Be specific with 
         )}
 
         {/* ══════════════════════════════════════════════════════════════
-            AI ASSISTANT
-        ══════════════════════════════════════════════════════════════ */}
-        {tab==="ai" && (
-          <div className="fade-in">
-            <SectionTitle sub="Ask anything about your portfolio — powered by Claude AI with full access to your data">AI Portfolio Assistant</SectionTitle>
-
-            {/* Suggested questions */}
-            <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:18}}>
-              {[
-                "Why did my portfolio drop in March 2026?",
-                "How diversified am I?",
-                "What is my Sharpe Ratio and what does it mean?",
-                "Which position has the best risk-adjusted return?",
-                "How does my portfolio compare to the S&P 500?",
-                "What are the biggest risks in my portfolio?",
-              ].map((q,i)=>(
-                <button key={i} onClick={()=>setAiInput(q)} style={{fontSize:11,padding:"6px 12px",borderRadius:20,border:`1px solid ${COLORS.border}`,background:COLORS.card,color:COLORS.muted,cursor:"pointer"}}>
-                  {q}
-                </button>
-              ))}
-            </div>
-
-            {/* Chat window */}
-            <div style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,overflow:"hidden",marginBottom:0}}>
-              <div ref={chatRef} style={{height:380,overflowY:"auto",padding:"20px"}}>
-                {aiMessages.map((m,i)=>(
-                  <div key={i} style={{marginBottom:16,display:"flex",flexDirection:"column",alignItems:m.role==="user"?"flex-end":"flex-start"}}>
-                    <div style={{fontSize:9,color:COLORS.dim,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.07em"}}>
-                      {m.role==="user"?"You":"AI Assistant"}
-                    </div>
-                    <div style={{
-                      maxWidth:"80%",padding:"12px 16px",borderRadius:12,fontSize:13,lineHeight:1.6,
-                      background:m.role==="user"?COLORS.accent:"#111e35",
-                      color:m.role==="user"?"#fff":COLORS.text,
-                      borderBottomRightRadius:m.role==="user"?0:12,
-                      borderBottomLeftRadius:m.role==="assistant"?0:12,
-                    }}>
-                      {m.content}
-                    </div>
-                  </div>
-                ))}
-                {aiLoading && (
-                  <div style={{display:"flex",gap:4,alignItems:"center",padding:"8px 0"}}>
-                    {[0,1,2].map(i=>(
-                      <div key={i} style={{width:6,height:6,borderRadius:"50%",background:COLORS.accent,animation:`pulse 1.2s ${i*0.2}s infinite`}} />
-                    ))}
-                    <span style={{fontSize:11,color:COLORS.muted,marginLeft:6}}>Thinking…</span>
-                  </div>
-                )}
-              </div>
-              <div style={{borderTop:`1px solid ${COLORS.border}`,padding:"14px 16px",display:"flex",gap:10}}>
-                <input
-                  value={aiInput}
-                  onChange={e=>setAiInput(e.target.value)}
-                  onKeyDown={e=>e.key==="Enter"&&sendAiMessage()}
-                  placeholder="Ask anything about your portfolio…"
-                  style={{flex:1,background:"#111e35",border:`1px solid ${COLORS.border}`,borderRadius:8,padding:"10px 14px",color:COLORS.text,fontSize:13,outline:"none"}}
-                />
-                <button onClick={sendAiMessage} disabled={aiLoading||!aiInput.trim()} style={{padding:"10px 20px",borderRadius:8,background:COLORS.accent,border:"none",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",opacity:aiLoading||!aiInput.trim()?0.5:1}}>
-                  Send
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ══════════════════════════════════════════════════════════════
             MONTHLY ANALYSIS
         ══════════════════════════════════════════════════════════════ */}
         {tab==="monthly" && !P.hasHistory && (
@@ -1094,79 +1027,6 @@ Answer questions about this portfolio concisely and helpfully. Be specific with 
                 </div>
               );
             })()}
-          </div>
-        )}
-
-        {/* ══════════════════════════════════════════════════════════════
-            ROADMAP
-        ══════════════════════════════════════════════════════════════ */}
-        {tab==="roadmap" && (
-          <div className="fade-in">
-            <SectionTitle sub="What's been built, what's coming next, and the full development history">Roadmap & Changelog</SectionTitle>
-
-            {/* Roadmap */}
-            <div style={{marginBottom:32}}>
-              <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:16}}>Development Roadmap</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:14}}>
-                {ROADMAP.map((q,i)=>(
-                  <div key={i} style={{background:COLORS.card,border:`1px solid ${q.status==="current"?COLORS.accent:COLORS.border}`,borderTop:`3px solid ${q.status==="current"?COLORS.accent:q.status==="planned"?COLORS.yellow:"#1a2540"}`,borderRadius:12,padding:"16px 18px"}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                      <div style={{fontSize:14,fontWeight:700,color:COLORS.text}}>{q.quarter}</div>
-                      <Badge text={q.status==="current"?"In Progress":q.status==="planned"?"Planned":"Future"} color={q.status==="current"?COLORS.green:q.status==="planned"?COLORS.yellow:COLORS.muted} bg={q.status==="current"?"#0a2a1a":q.status==="planned"?"#2a1a0a":"#1a2540"} />
-                    </div>
-                    {q.items.map((item,j)=>(
-                      <div key={j} style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:8}}>
-                        <div style={{width:5,height:5,borderRadius:"50%",background:q.status==="current"?COLORS.accent:COLORS.dim,flexShrink:0,marginTop:4}} />
-                        <div style={{fontSize:12,color:q.status==="current"?COLORS.text:COLORS.muted,lineHeight:1.4}}>{item}</div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Changelog */}
-            <div>
-              <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:16}}>Changelog</div>
-              {CHANGELOG.map((c,i)=>(
-                <div key={i} style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"16px 20px",marginBottom:12}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
-                    <Badge text={`v${c.version}`} color={COLORS.accentLight} bg="#191b4a" />
-                    <Badge text={c.type==="major"?"Major Release":"Minor Update"} color={c.type==="major"?COLORS.green:COLORS.yellow} bg={c.type==="major"?"#0a2a1a":"#2a1a0a"} />
-                    <span style={{fontSize:11,color:COLORS.dim}}>{c.date}</span>
-                  </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                    {c.notes.map((n,j)=>(
-                      <div key={j} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
-                        <span style={{fontSize:11,color:COLORS.accent,marginTop:1}}>+</span>
-                        <span style={{fontSize:12,color:"#94a3b8",lineHeight:1.4}}>{n}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Impact metrics */}
-            <div style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"18px 22px",marginTop:8}}>
-              <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:14}}>Platform Stats</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:14}}>
-                {[
-                  {label:"Portfolios Tracked",value:"1",sub:"Jon Ong"},
-                  {label:"Positions Monitored",value:"9",sub:"across 4 trades"},
-                  {label:"Months of Data",value:"13",sub:"Jun '25 → Now"},
-                  {label:"Metrics Calculated",value:"10+",sub:"per portfolio"},
-                  {label:"Features Shipped",value:"v2.0",sub:"this session"},
-                  {label:"AI Queries Answered",value:"∞",sub:"ask anything"},
-                ].map((s,i)=>(
-                  <div key={i} style={{textAlign:"center"}}>
-                    <div style={{fontSize:24,fontWeight:800,color:COLORS.accentLight}}>{s.value}</div>
-                    <div style={{fontSize:10,color:COLORS.text,fontWeight:600,marginTop:2}}>{s.label}</div>
-                    <div style={{fontSize:10,color:COLORS.dim}}>{s.sub}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         )}
 
