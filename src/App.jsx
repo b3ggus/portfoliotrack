@@ -66,6 +66,7 @@ const MONTHLY_HISTORY = [
   { month:"May '26", label:"May 31", VOO:669.00, NVDA:232.00, AAPL:310.00, MSFT:413.00, AMZN:266.00, "BRK.B":487.00, META:610.00, GOOGL:395.00, QQQ:490.00, sp500:7413, note:"QQQ added @ $490. NVDA ATH $235.47 May 14. GOOGL ATH $402 May 13." },
   { month:"Jun '26", label:"Jun 30", VOO:678.00, NVDA:207.00, AAPL:302.00, MSFT:392.00, AMZN:248.00, "BRK.B":490.00, META:595.00, GOOGL:372.00, QQQ:516.00, sp500:7474, note:"Tech consolidates -1.1%. AAPL hits ATH $317.40 Jun 8." },
   { month:"Jul '26", label:"Jul 31", VOO:692.00, NVDA:224.00, AAPL:308.00, MSFT:405.00, AMZN:256.00, "BRK.B":495.00, META:615.00, GOOGL:385.00, QQQ:535.00, sp500:7645, note:"Q2 earnings season broadly strong. NVDA rebounds 8% on datacenter demand beat. QQQ crosses $530 for the first time." },
+  { month:"Aug '26", label:"Aug 31", VOO:705.00, NVDA:238.00, AAPL:315.00, MSFT:418.00, AMZN:262.00, "BRK.B":500.00, META:630.00, GOOGL:398.00, QQQ:548.00, sp500:7790, note:"Fed signals a September rate cut. NVDA jumps on next-gen AI chip announcement. GOOGL crosses $395 on cloud growth." },
 ];
 
 const MONTHLY_ANALYSIS = [
@@ -83,6 +84,7 @@ const MONTHLY_ANALYSIS = [
   { month:"May '26", spReturn:"+5.0%", summary:"AI mania peaked. NVDA hit ATH $235.47 May 14 — up 49% from your buy. GOOGL hit ATH $402.38 May 13. AMZN hit ATH $278.56. You added QQQ on May 1 to ride momentum. Portfolio at its high.", best:{ticker:"NVDA",reason:"ALL-TIME HIGH $235.47 May 14 — up 49%"}, worst:{ticker:"META",reason:"Recovered to $610 but still below $680 entry"}, events:["NVDA ATH $235.47 May 14","GOOGL ATH $402.38 May 13","AMZN ATH $278.56 May 5","Trade 4: QQQ added @ $490 May 1"], change:"+$14,600" },
   { month:"Jun '26", spReturn:"-1.1%", summary:"Mild tech pullback after May highs. NVDA gave back 12% from ATH. But AAPL hit ATH $317.40 on June 8 — up 58% from your buy. S&P held well above 7,000. QQQ gained 5% in first full month.", best:{ticker:"AAPL",reason:"ATH $317.40 Jun 8 — up 58% from your buy"}, worst:{ticker:"NVDA",reason:"Pulled back 12% from ATH on profit taking"}, events:["AAPL ATH $317.40 Jun 8","NVDA -12% from ATH","S&P -1.1% healthy consolidation"], change:"+$2,800" },
   { month:"Jul '26", spReturn:"+2.29%", summary:"A strong earnings season lifted the whole portfolio. NVDA rebounded 8% on a datacenter demand beat, erasing most of June's pullback. GOOGL and QQQ both pushed to new highs on continued AI infrastructure spending. Broad-based gains across all nine positions.", best:{ticker:"NVDA",reason:"Rebounded 8% on strong Q2 datacenter earnings"}, worst:{ticker:"BRK.B",reason:"Steady but the slowest mover in a growth-led month"}, events:["Q2 earnings season broadly beats estimates","NVDA +8% on datacenter demand beat","QQQ crosses $530 for the first time"], change:"+$5,600" },
+  { month:"Aug '26", spReturn:"+1.90%", summary:"Another steady month higher. The Fed signaled a likely September rate cut, giving growth stocks room to run. NVDA led the portfolio again on a next-gen AI chip announcement, while GOOGL pushed past $395 on continued cloud strength. BRK.B lagged as value stocks took a back seat to growth.", best:{ticker:"NVDA",reason:"Jumped on next-gen AI chip announcement, up ~6% on the month"}, worst:{ticker:"BRK.B",reason:"Slowest mover as growth outpaced value"}, events:["Fed signals September rate cut","NVDA unveils next-gen AI chip roadmap","GOOGL crosses $395 on cloud growth","S&P +1.90%"], change:"+$4,900" },
 ];
 
 const EDUCATION_CONTENT = [
@@ -1100,27 +1102,84 @@ function LeaderboardTab() {
   if (loadingRows) return <div style={{ color: COLORS.muted, fontSize: 13 }}>Loading leaderboard…</div>;
   if (rows.length === 0) return <div style={{ color: COLORS.muted, fontSize: 13 }}>No community portfolios yet — be the first under "My Portfolio."</div>;
 
+  const MEDAL = ["🥇", "🥈", "🥉"];
+  const MEDAL_COLOR = ["#facc15", "#cbd5e1", "#d97706"];
+  const AVATAR_PALETTE = ["#6366f1", "#10b981", "#f59e0b", "#ec4899", "#14b8a6", "#8b5cf6", "#f97316", "#3b82f6"];
+  const maxAbsReturn = Math.max(...rows.map(r => Math.abs(r.returnPct)), 1);
+  const initials = (name) => (name || "?").trim().split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+
   return (
-    <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "18px 22px" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-        <thead>
-          <tr style={{ borderBottom: `1px solid ${COLORS.border}` }}>
-            {["Rank", "Portfolio", "Value", "Return"].map(h => (
-              <th key={h} style={{ padding: "7px 4px", textAlign: "left", color: COLORS.dim, fontWeight: 500, fontSize: 10, textTransform: "uppercase" }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={r.id} style={{ borderBottom: `1px solid ${COLORS.bg}` }}>
-              <td style={{ padding: "8px 4px", color: COLORS.muted }}>{i + 1}</td>
-              <td style={{ padding: "8px 4px", fontWeight: 700, color: COLORS.text }}>{r.display_name}</td>
-              <td style={{ padding: "8px 4px", color: "#94a3b8" }}>{fmt(r.totalValue)}</td>
-              <td style={{ padding: "8px 4px", fontWeight: 700, color: r.returnPct >= 0 ? COLORS.green : COLORS.red }}>{pct(r.returnPct)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {rows.map((r, i) => {
+        const isTop3 = i < 3;
+        const barPct = Math.min(100, (Math.abs(r.returnPct) / maxAbsReturn) * 100);
+        const isPositive = r.returnPct >= 0;
+        return (
+          <div
+            key={r.id}
+            className="lb-row"
+            style={{
+              position: "relative",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              background: isTop3 ? "linear-gradient(90deg, #14182c 0%, " + COLORS.card + " 60%)" : COLORS.card,
+              border: `1px solid ${isTop3 ? MEDAL_COLOR[i] + "55" : COLORS.border}`,
+              borderRadius: 12,
+              padding: isTop3 ? "16px 20px" : "13px 20px",
+              boxShadow: i === 0 ? "0 0 0 1px rgba(250,204,21,0.15), 0 8px 24px -12px rgba(250,204,21,0.35)" : "none",
+              transition: "border-color 0.15s ease, transform 0.15s ease",
+            }}
+          >
+            {/* Rank */}
+            <div style={{ width: 34, textAlign: "center", flexShrink: 0 }}>
+              {isTop3 ? (
+                <span style={{ fontSize: isTop3 && i === 0 ? 26 : 22 }}>{MEDAL[i]}</span>
+              ) : (
+                <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.dim }}>#{i + 1}</span>
+              )}
+            </div>
+
+            {/* Avatar */}
+            <div style={{
+              width: isTop3 ? 40 : 34, height: isTop3 ? 40 : 34, borderRadius: "50%", flexShrink: 0,
+              background: AVATAR_PALETTE[i % AVATAR_PALETTE.length],
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: isTop3 ? 14 : 12, fontWeight: 800, color: "#0b1120",
+              border: isTop3 ? `2px solid ${MEDAL_COLOR[i]}` : "none",
+            }}>
+              {initials(r.display_name)}
+            </div>
+
+            {/* Name + value */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 800, fontSize: isTop3 ? 15 : 14, color: COLORS.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {r.display_name}
+              </div>
+              <div style={{ fontSize: 11, color: COLORS.muted, marginTop: 2 }}>{fmt(r.totalValue)} total value</div>
+            </div>
+
+            {/* Return + bar */}
+            <div style={{ width: 150, flexShrink: 0, textAlign: "right" }}>
+              <div style={{ fontWeight: 900, fontSize: isTop3 ? 18 : 15, color: isPositive ? COLORS.green : COLORS.red, marginBottom: 6 }}>
+                {pct(r.returnPct)}
+              </div>
+              <div style={{ height: 5, borderRadius: 3, background: COLORS.bg, overflow: "hidden" }}>
+                <div style={{
+                  height: "100%", width: `${barPct}%`, borderRadius: 3,
+                  background: isPositive
+                    ? `linear-gradient(90deg, ${COLORS.green}99, ${COLORS.green})`
+                    : `linear-gradient(90deg, ${COLORS.red}99, ${COLORS.red})`,
+                }} />
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      <style>{`
+        .lb-row:hover { border-color: ${COLORS.borderHover} !important; transform: translateY(-1px); }
+      `}</style>
     </div>
   );
 }
