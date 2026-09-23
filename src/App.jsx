@@ -187,6 +187,26 @@ async function fetchFinnhub(ticker, fallbackPrice) {
   }
 }
 
+// Fetches Finnhub quotes for many tickers without blowing through the free-tier
+// rate limit (60 calls/min): BATCH_SIZE requests fire at once, then wait
+// BATCH_DELAY_MS before the next batch, instead of firing everything in parallel.
+const FINNHUB_BATCH_SIZE = 5;
+const FINNHUB_BATCH_DELAY_MS = 1100;
+async function fetchFinnhubBatched(tickers, fallbackPrices) {
+  const results = {};
+  for (let i = 0; i < tickers.length; i += FINNHUB_BATCH_SIZE) {
+    const batch = tickers.slice(i, i + FINNHUB_BATCH_SIZE);
+    await Promise.all(batch.map(async (ticker) => {
+      const { price } = await fetchFinnhub(ticker, fallbackPrices[ticker]);
+      results[ticker] = price;
+    }));
+    if (i + FINNHUB_BATCH_SIZE < tickers.length) {
+      await new Promise(res => setTimeout(res, FINNHUB_BATCH_DELAY_MS));
+    }
+  }
+  return results;
+}
+
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
 function StatCard({label, value, sub, color, size="md"}) {
   return (
@@ -1080,10 +1100,16 @@ function LeaderboardTab() {
 
       const quoteCache = {};
       const uniqueTickers = [...new Set((trades || []).map(t => t.ticker))];
-      await Promise.all(uniqueTickers.map(async (ticker) => {
-        const { price } = await fetchFinnhub(ticker, 0);
-        quoteCache[ticker] = price;
-      }));
+      // Per-ticker fallback = volume-weighted average price actually paid across all trades,
+      // so a failed/rate-limited Finnhub call never collapses a holding to $0.
+      const fallbackPrices = {};
+      uniqueTickers.forEach(ticker => {
+        const tTrades = (trades || []).filter(t => t.ticker === ticker);
+        const totalShares = tTrades.reduce((s, t) => s + t.shares, 0);
+        const totalCost = tTrades.reduce((s, t) => s + t.shares * t.price, 0);
+        fallbackPrices[ticker] = totalShares > 0 ? totalCost / totalShares : 0;
+      });
+      Object.assign(quoteCache, await fetchFinnhubBatched(uniqueTickers, fallbackPrices));
 
       const ranked = portfolios.map(p => {
         const held = (trades || []).filter(t => t.portfolio_id === p.id);
