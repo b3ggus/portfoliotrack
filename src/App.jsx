@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, AreaChart, Area,
@@ -547,7 +547,7 @@ export default function App() {
             {/* Mini chart preview */}
             <div style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"20px 24px"}}>
               <div style={{fontSize:13,fontWeight:600,color:COLORS.text,marginBottom:4}}>Portfolio vs S&P 500 — Normalized (Base 100)</div>
-              <div style={{fontSize:11,color:COLORS.dim,marginBottom:16}}>Jun 2025 → Now · Your portfolio vs benchmark</div>
+              <div style={{fontSize:11,color:COLORS.dim,marginBottom:16}}>Nov 2023 → Now · Your portfolio vs benchmark</div>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={sp500Normalized}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#111e35" />
@@ -657,7 +657,7 @@ export default function App() {
 
             {/* Portfolio value chart */}
             <div style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"18px 22px",marginBottom:18}}>
-              <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:2}}>Portfolio Value — Jun 2025 to Now</div>
+              <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:2}}>Portfolio Value — Nov 2023 to Now</div>
               <div style={{fontSize:11,color:COLORS.dim,marginBottom:14}}>Dashed line = $100K original cost basis · Green dot = current value</div>
               <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={chartData}>
@@ -710,7 +710,7 @@ export default function App() {
                   </div>
                 ))}
                 <div style={{display:"flex",justifyContent:"space-between",paddingTop:10}}>
-                  <span style={{fontWeight:700,color:COLORS.muted,fontSize:12}}>TOTAL · $130K deployed</span>
+                  <span style={{fontWeight:700,color:COLORS.muted,fontSize:12}}>TOTAL · $170K deployed</span>
                   <span style={{fontWeight:800,fontSize:15,color:totalGL>=0?COLORS.green:COLORS.red}}>
                     {loading?"···":`${fmt(totalCurrent)} · ${pct(totalPct)}`}
                   </span>
@@ -1151,38 +1151,71 @@ export default function App() {
 }
 
 // ─── LEADERBOARD ────────────────────────────────────────────────────────────
+// Supabase caps a single select() at 1,000 rows, so we page through with range()
+// until every row is loaded. Ordering by a stable column keeps pages consistent.
+async function fetchAllRows(table, orderCol = "id") {
+  const PAGE = 1000;
+  let all = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase.from(table).select("*").order(orderCol).range(from, from + PAGE - 1);
+    if (error || !data) return all.length ? all : null;
+    all = all.concat(data);
+    if (data.length < PAGE) break;
+  }
+  return all;
+}
+
+const LB_PAGE_SIZE = 50;
+const LB_TABS = [
+  { id: "top10",   label: "Top 10",    limit: 10 },
+  { id: "top100",  label: "Top 100",   limit: 100 },
+  { id: "top1000", label: "Top 1,000", limit: 1000 },
+  { id: "all",     label: "Everyone",  limit: Infinity },
+];
+
 function LeaderboardTab() {
   const [rows, setRows] = useState([]);
   const [loadingRows, setLoadingRows] = useState(true);
+  const [tabId, setTabId] = useState("top10");
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     async function build() {
       setLoadingRows(true);
-      const { data: portfolios } = await supabase.from("portfolios").select("*");
-      const { data: trades } = await supabase.from("trades").select("*");
+      const portfolios = await fetchAllRows("portfolios");
+      const trades = await fetchAllRows("trades");
       if (!portfolios) { setLoadingRows(false); return; }
 
+      const allTrades = trades || [];
       const quoteCache = {};
-      const uniqueTickers = [...new Set((trades || []).map(t => t.ticker))];
+      const uniqueTickers = [...new Set(allTrades.map(t => t.ticker))];
+      // Group trades by portfolio once (avoids an O(users × trades) scan)
+      const byPortfolio = {};
+      const byTicker = {};
+      allTrades.forEach(t => {
+        (byPortfolio[t.portfolio_id] = byPortfolio[t.portfolio_id] || []).push(t);
+        const b = (byTicker[t.ticker] = byTicker[t.ticker] || { shares: 0, cost: 0 });
+        b.shares += t.shares; b.cost += t.shares * t.price;
+      });
       // Per-ticker fallback = volume-weighted average price actually paid across all trades,
-      // so a failed/rate-limited Finnhub call never collapses a holding to $0.
+      // so a failed/rate-limited price call never collapses a holding to $0.
       const fallbackPrices = {};
       uniqueTickers.forEach(ticker => {
-        const tTrades = (trades || []).filter(t => t.ticker === ticker);
-        const totalShares = tTrades.reduce((s, t) => s + t.shares, 0);
-        const totalCost = tTrades.reduce((s, t) => s + t.shares * t.price, 0);
-        fallbackPrices[ticker] = totalShares > 0 ? totalCost / totalShares : 0;
+        const b = byTicker[ticker];
+        fallbackPrices[ticker] = b && b.shares > 0 ? b.cost / b.shares : 0;
       });
       Object.assign(quoteCache, await fetchFinnhubBatched(uniqueTickers, fallbackPrices));
 
       const ranked = portfolios.map(p => {
-        const held = (trades || []).filter(t => t.portfolio_id === p.id);
+        const held = byPortfolio[p.id] || [];
         const holdingsValue = held.reduce((s, t) => s + t.shares * (quoteCache[t.ticker] || 0), 0);
         const totalValue = holdingsValue + p.cash_balance;
         const returnPct = ((totalValue - p.starting_cash) / p.starting_cash) * 100;
         return { ...p, totalValue, returnPct };
-      }).sort((a, b) => b.returnPct - a.returnPct);
+      }).sort((a, b) => b.returnPct - a.returnPct)
+        .map((p, i) => ({ ...p, rank: i + 1 })); // global rank, kept even when searching
 
       if (!cancelled) { setRows(ranked); setLoadingRows(false); }
     }
@@ -1190,18 +1223,86 @@ function LeaderboardTab() {
     return () => { cancelled = true; };
   }, []);
 
+  // Only show tabs that add something (e.g. hide "Top 1,000" until there are >100 players)
+  const visibleTabs = LB_TABS.filter((t, i) => i === 0 || rows.length > LB_TABS[i - 1].limit);
+  const activeTab = visibleTabs.find(t => t.id === tabId) || visibleTabs[0];
+  const searching = query.trim().length > 0;
+
+  const listed = useMemo(() => {
+    if (searching) {
+      const q = query.trim().toLowerCase();
+      return rows.filter(r => (r.display_name || "").toLowerCase().includes(q));
+    }
+    return rows.slice(0, activeTab.limit);
+  }, [rows, query, searching, activeTab.limit]);
+
+  const maxAbsReturn = useMemo(() => Math.max(...rows.map(r => Math.abs(r.returnPct)), 1), [rows]);
+
   if (loadingRows) return <div style={{ color: COLORS.muted, fontSize: 13 }}>Loading leaderboard…</div>;
   if (rows.length === 0) return <div style={{ color: COLORS.muted, fontSize: 13 }}>No community portfolios yet — be the first under "My Portfolio."</div>;
+
+  const totalPages = Math.max(1, Math.ceil(listed.length / LB_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageRows = listed.slice(safePage * LB_PAGE_SIZE, (safePage + 1) * LB_PAGE_SIZE);
 
   const MEDAL = ["🥇", "🥈", "🥉"];
   const MEDAL_COLOR = ["#facc15", "#cbd5e1", "#d97706"];
   const AVATAR_PALETTE = ["#6366f1", "#10b981", "#f59e0b", "#ec4899", "#14b8a6", "#8b5cf6", "#f97316", "#3b82f6"];
-  const maxAbsReturn = Math.max(...rows.map(r => Math.abs(r.returnPct)), 1);
   const initials = (name) => (name || "?").trim().split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+
+  const pill = (active) => ({
+    padding: "7px 14px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
+    border: `1px solid ${active ? COLORS.accent : COLORS.border}`,
+    background: active ? COLORS.accent : COLORS.card,
+    color: active ? "#fff" : COLORS.muted,
+  });
+  const pagerBtn = (disabled) => ({
+    ...pill(false), opacity: disabled ? 0.4 : 1, cursor: disabled ? "default" : "pointer",
+  });
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {rows.map((r, i) => {
+      {/* Search + tabs */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", marginBottom: 4 }}>
+        <div style={{ position: "relative", flex: "1 1 220px", maxWidth: 320 }}>
+          <input
+            value={query}
+            onChange={e => { setQuery(e.target.value); setPage(0); }}
+            placeholder="🔍 Search a username…"
+            aria-label="Search leaderboard by username"
+            style={{ ...inputStyle, marginTop: 0, paddingRight: 30 }}
+          />
+          {searching && (
+            <button
+              onClick={() => { setQuery(""); setPage(0); }}
+              aria-label="Clear search"
+              style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: COLORS.muted, cursor: "pointer", fontSize: 16 }}
+            >×</button>
+          )}
+        </div>
+        {!searching && visibleTabs.length > 1 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {visibleTabs.map(t => (
+              <button key={t.id} onClick={() => { setTabId(t.id); setPage(0); }} style={pill(t.id === activeTab.id)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{ fontSize: 11, color: COLORS.dim }}>
+        {searching
+          ? `${listed.length} ${listed.length === 1 ? "match" : "matches"} for "${query.trim()}" · out of ${rows.length.toLocaleString()} players`
+          : `Showing ${listed.length.toLocaleString()} of ${rows.length.toLocaleString()} players`}
+      </div>
+
+      {listed.length === 0 && (
+        <div style={{ color: COLORS.muted, fontSize: 13, padding: "20px 0" }}>No username matches "{query.trim()}".</div>
+      )}
+
+      {pageRows.map((r) => {
+        const i = r.rank - 1; // global 0-based rank
         const isTop3 = i < 3;
         const barPct = Math.min(100, (Math.abs(r.returnPct) / maxAbsReturn) * 100);
         const isPositive = r.returnPct >= 0;
@@ -1224,11 +1325,11 @@ function LeaderboardTab() {
             }}
           >
             {/* Rank */}
-            <div style={{ width: 34, textAlign: "center", flexShrink: 0 }}>
+            <div style={{ width: 44, textAlign: "center", flexShrink: 0 }}>
               {isTop3 ? (
-                <span style={{ fontSize: isTop3 && i === 0 ? 26 : 22 }}>{MEDAL[i]}</span>
+                <span style={{ fontSize: i === 0 ? 26 : 22 }}>{MEDAL[i]}</span>
               ) : (
-                <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.dim }}>#{i + 1}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.dim }}>#{r.rank.toLocaleString()}</span>
               )}
             </div>
 
@@ -1268,11 +1369,45 @@ function LeaderboardTab() {
           </div>
         );
       })}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 6 }}>
+          <button disabled={safePage === 0} onClick={() => setPage(safePage - 1)} style={pagerBtn(safePage === 0)}>← Prev</button>
+          <span style={{ fontSize: 12, color: COLORS.muted }}>Page {safePage + 1} of {totalPages}</span>
+          <button disabled={safePage >= totalPages - 1} onClick={() => setPage(safePage + 1)} style={pagerBtn(safePage >= totalPages - 1)}>Next →</button>
+        </div>
+      )}
+
       <style>{`
         .lb-row:hover { border-color: ${COLORS.borderHover} !important; transform: translateY(-1px); }
       `}</style>
     </div>
   );
+}
+
+// ─── DISPLAY NAME HELPERS ───────────────────────────────────────────────────
+const NAME_PREFIXES = ["Trend","Bull","Bear","Alpha","Dividend","Value","Growth","Momentum","Index","Yield","Rally","Quant","Compound","Bluechip","Swing","Options","Macro","Vector","Delta","Sigma","Blockchain","Equity","Breakout","Hedge","Ticker","Market","Capital","Margin"];
+const NAME_SUFFIXES = ["Trader","Hawk","Wolf","Whale","Sage","Ninja","Pilot","Fox","Baron","Titan","Maven","Guru","Rocket","Falcon","Tiger","Shark","Wizard","Ranger","Captain","Hunter","Oracle","Pioneer"];
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+// Case-insensitive exact match against existing leaderboard names (escapes LIKE wildcards)
+async function isNameTaken(name) {
+  const escaped = name.trim().replace(/[\\%_]/g, c => "\\" + c);
+  const { data, error } = await supabase.from("portfolios").select("id").ilike("display_name", escaped).limit(1);
+  if (error) return false; // don't block signup on a lookup failure
+  return (data || []).length > 0;
+}
+
+// Returns a distinct name like "TrendTrader" — adds digits only if the plain version is taken
+async function generateUniqueName() {
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const base = pick(NAME_PREFIXES) + pick(NAME_SUFFIXES);
+    const digits = attempt < 6 ? "" : attempt < 9 ? String(10 + Math.floor(Math.random() * 90)) : String(100 + Math.floor(Math.random() * 9900));
+    const candidate = base + digits;
+    if (!(await isNameTaken(candidate))) return candidate;
+  }
+  return "Trader" + Date.now().toString().slice(-7); // practically-unreachable safety net
 }
 
 // ─── MY PORTFOLIO (ACCOUNTS) ────────────────────────────────────────────────
@@ -1284,6 +1419,7 @@ function MyPortfolioTab({ user, myPortfolio, onAuthed, onLogout, onTraded }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
@@ -1343,11 +1479,18 @@ function MyPortfolioTab({ user, myPortfolio, onAuthed, onLogout, onTraded }) {
     e.preventDefault();
     setError(""); setAuthLoading(true);
     if (mode === "signup") {
+      // Resolve the display name first: reject a taken one, or auto-generate if left blank
+      let finalName = displayName.trim();
+      if (finalName) {
+        if (await isNameTaken(finalName)) { setError(`"${finalName}" is already on the leaderboard — try another or tap 🎲 for a suggestion.`); setAuthLoading(false); return; }
+      } else {
+        finalName = await generateUniqueName();
+      }
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) { setError(error.message); setAuthLoading(false); return; }
       if (data.user) {
         const { error: pErr } = await supabase.from("portfolios").insert({
-          user_id: data.user.id, display_name: displayName || email.split("@")[0], starting_cash: 100000, cash_balance: 100000,
+          user_id: data.user.id, display_name: finalName, starting_cash: 100000, cash_balance: 100000,
         });
         if (pErr) { setError("Account created, but portfolio setup failed: " + pErr.message); setAuthLoading(false); return; }
       }
@@ -1396,7 +1539,19 @@ function MyPortfolioTab({ user, myPortfolio, onAuthed, onLogout, onTraded }) {
           {mode === "signup" && (
             <label style={{ display: "block", marginBottom: 12, fontSize: 12, color: COLORS.muted }}>
               Display name (shown on leaderboard)
-              <input style={inputStyle} value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="e.g. TrendTrader22" />
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+                <input style={{ ...inputStyle, marginTop: 0 }} value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="e.g. TrendTrader22" maxLength={30} />
+                <button
+                  type="button"
+                  disabled={suggesting}
+                  onClick={async () => { setSuggesting(true); setDisplayName(await generateUniqueName()); setSuggesting(false); }}
+                  title="Suggest an available name"
+                  style={{ ...btnStyle, padding: "8px 12px", whiteSpace: "nowrap", opacity: suggesting ? 0.6 : 1 }}
+                >
+                  {suggesting ? "…" : "🎲 Suggest"}
+                </button>
+              </div>
+              <div style={{ fontSize: 11, color: COLORS.dim, marginTop: 4 }}>Can't think of one? Leave it blank and we'll pick a unique name for you.</div>
             </label>
           )}
           <label style={{ display: "block", marginBottom: 12, fontSize: 12, color: COLORS.muted }}>
