@@ -11,6 +11,7 @@ import { supabase } from "./lib/supabaseClient";
 const FINNHUB_KEY = import.meta.env.VITE_FINNHUB_API_KEY;
 const ALPACA_KEY_ID = import.meta.env.VITE_ALPACA_KEY_ID;
 const ALPACA_SECRET_KEY = import.meta.env.VITE_ALPACA_SECRET_KEY;
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const VERSION = "2.1.0";
 const LAUNCH_DATE = "Nov 30, 2023";
 
@@ -146,7 +147,8 @@ const EDUCATION_CONTENT = [
 ];
 
 const CHANGELOG = [
-  { version:"2.0.0", date:"Jul 2026", type:"major", notes:["Full platform rebuild — PortfolioTrack v2","Added AI Portfolio Assistant powered by Claude","Advanced analytics: CAGR, Sharpe, Beta, Alpha, Max Drawdown","Portfolio Health Score (0-100)","Education Center with interactive quizzes","Public roadmap and changelog","Sector allocation and diversification analysis","Comparison vs S&P 500 benchmark"] },
+  { version:"2.1.0", date:"Sep 2026", type:"minor", notes:["Added Sell (with average-cost realized gain/loss)","AI Assistant powered by Gemini","Leaderboard search, tabs, and pagination for 1,000+ players","Auto-generated, uniqueness-checked leaderboard display names","Users section in Platform Stats","Corrected stale date/dollar labels on the dashboard"] },
+  { version:"2.0.0", date:"Jul 2026", type:"major", notes:["Full platform rebuild — PortfolioTrack v2","Advanced analytics: CAGR, Sharpe, Beta, Alpha, Max Drawdown","Portfolio Health Score (0-100)","Education Center with interactive quizzes","Public roadmap and changelog","Sector allocation and diversification analysis","Comparison vs S&P 500 benchmark"] },
   { version:"1.1.0", date:"Jul 2026", type:"minor", notes:["Added Monthly Analysis tab with market narrative","Added Trade Log with rationale for each entry","Gradient header accent bar","Jon Ong branding and footer"] },
   { version:"1.0.0", date:"Jul 2026", type:"major", notes:["Initial launch of PortfolioTrack","9 positions across 4 trades","Month-by-month historical tracking","Holdings and overview tabs"] },
 ];
@@ -317,6 +319,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [myPortfolio, setMyPortfolio] = useState(null);
   const [communityCount, setCommunityCount] = useState(null);
+  const [communityTradeCount, setCommunityTradeCount] = useState(null);
 
   const fetchAll = useCallback(async (portfolioKey) => {
     const pf = PORTFOLIOS[portfolioKey];
@@ -334,6 +337,7 @@ export default function App() {
   useEffect(()=>{
     supabase.auth.getSession().then(({data})=>{ if(data.session) loadMyPortfolio(data.session.user); });
     supabase.from("portfolios").select("*",{count:"exact",head:true}).then(({count})=>setCommunityCount(count??0));
+    supabase.from("trades").select("*",{count:"exact",head:true}).then(({count})=>setCommunityTradeCount(count??0));
   },[]);
 
   async function loadMyPortfolio(authedUser) {
@@ -354,6 +358,7 @@ export default function App() {
     return {...h, currentPrice, shares, currentValue, gainLoss, pctChange};
   });
 
+  const monthsOfData = (()=>{ const start=new Date(2023,10,1); const now=new Date(); return (now.getFullYear()-start.getFullYear())*12+(now.getMonth()-start.getMonth())+1; })();
   const totalDeployed = TRADES.reduce((s,h)=>s+h.allocation,0);
   const totalCurrent = holdings.reduce((s,h)=>s+h.currentValue,0);
   const totalGL = totalCurrent-totalDeployed;
@@ -622,11 +627,29 @@ export default function App() {
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:14}}>
                   {[
                     {label:"Portfolios Tracked",value:"1",sub:"Jon Ong"},
-                    {label:"Positions Monitored",value:"9",sub:"across 4 trades"},
-                    {label:"Months of Data",value:"14",sub:"Jun '25 → Now"},
+                    {label:"Positions Monitored",value:String(TRADES.length),sub:`across ${TRADES.length} trades`},
+                    {label:"Months of Data",value:String(monthsOfData),sub:"Nov '23 → Now"},
                     {label:"Metrics Calculated",value:"10+",sub:"per portfolio"},
                     {label:"Features Shipped",value:"v2.1",sub:"this session"},
-                    {label:"Community Portfolios",value:communityCount!==null?String(communityCount):"—",sub:"and counting"},
+                  ].map((s,i)=>(
+                    <div key={i} style={{textAlign:"center"}}>
+                      <div style={{fontSize:24,fontWeight:800,color:COLORS.accentLight}}>{s.value}</div>
+                      <div style={{fontSize:10,color:COLORS.text,fontWeight:600,marginTop:2}}>{s.label}</div>
+                      <div style={{fontSize:10,color:COLORS.dim}}>{s.sub}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Users / community metrics */}
+              <div style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"18px 22px",marginTop:16}}>
+                <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:14}}>Users</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:14}}>
+                  {[
+                    {label:"Registered Users",value:communityCount!==null?communityCount.toLocaleString():"—",sub:"community-wide"},
+                    {label:"Community Trades",value:communityTradeCount!==null?communityTradeCount.toLocaleString():"—",sub:"buy & sell orders"},
+                    {label:"Starting Capital",value:"$100,000",sub:"per new user"},
+                    {label:"You're Logged In As",value:user?(myPortfolio?.display_name||"—"):"Guest",sub:user?"tracked on leaderboard":"sign up to join"},
                   ].map((s,i)=>(
                     <div key={i} style={{textAlign:"center"}}>
                       <div style={{fontSize:24,fontWeight:800,color:COLORS.accentLight}}>{s.value}</div>
@@ -1146,7 +1169,137 @@ export default function App() {
           <div style={{fontSize:11,color:COLORS.dim}}>For educational purposes only. Not financial advice.</div>
         </div>
       </div>
+
+      <AIAssistant contextLine={
+        user && myPortfolio
+          ? `Logged in as ${myPortfolio.display_name}, community portfolio starting cash $100,000, current cash balance ${fmt(myPortfolio.cash_balance)}.`
+          : "This visitor is not logged in / viewing the demo portfolio (started Nov 2023, currently " + pct(totalPct) + " return)."
+      } />
     </div>
+  );
+}
+
+// ─── AI ASSISTANT (Gemini) ──────────────────────────────────────────────────
+// Free-tier Gemini call. NOTE: like the existing Finnhub/Alpaca keys in this file,
+// VITE_ env vars are bundled into the client JS and are publicly visible in the
+// deployed site — fine for a low-volume free-tier demo key, but for anything you
+// care about protecting, proxy this through a Supabase Edge Function instead.
+const GEMINI_MODEL = "gemini-2.5-flash";
+const ASSISTANT_SYSTEM_PROMPT = `You are the built-in assistant for PortfolioTrack, an educational stock-portfolio
+tracking app. You help users understand investing concepts (diversification, CAGR, Sharpe ratio, drawdown, etc.),
+navigate the app, and interpret their own portfolio numbers when given. Keep answers short (2-5 sentences unless
+asked for more), friendly, and beginner-approachable. You are not a licensed financial advisor: never tell someone
+what to buy or sell, and add a brief reminder for that kind of question that this is educational, not financial advice.`;
+
+async function askGemini(history, contextLine) {
+  if (!GEMINI_KEY) throw new Error("no-key");
+  const contents = [
+    { role: "user", parts: [{ text: ASSISTANT_SYSTEM_PROMPT + (contextLine ? "\n\nContext about this user: " + contextLine : "") }] },
+    { role: "model", parts: [{ text: "Understood — I'll keep that in mind." }] },
+    ...history.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.text }] })),
+  ];
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 400, temperature: 0.6 } }) }
+  );
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`gemini-${res.status}: ${body.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text).join("") || "";
+  if (!text) throw new Error("empty-response");
+  return text.trim();
+}
+
+function AIAssistant({ contextLine }) {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function send(e) {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text || sending) return;
+    const next = [...messages, { role: "user", text }];
+    setMessages(next); setInput(""); setErr(""); setSending(true);
+    try {
+      const reply = await askGemini(next, contextLine);
+      setMessages(m => [...m, { role: "assistant", text: reply }]);
+    } catch (ex) {
+      const msg = ex.message === "no-key"
+        ? "The AI assistant isn't configured yet — ask the site owner to set VITE_GEMINI_API_KEY."
+        : "Sorry, I couldn't reach the AI assistant just now. Please try again in a moment.";
+      setErr(msg);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label={open ? "Close AI assistant" : "Open AI assistant"}
+        style={{
+          position: "fixed", bottom: 22, right: 22, width: 54, height: 54, borderRadius: "50%",
+          background: COLORS.accent, color: "#fff", border: "none", fontSize: 22, cursor: "pointer",
+          boxShadow: "0 8px 24px -8px rgba(0,0,0,0.5)", zIndex: 1000,
+        }}
+      >
+        {open ? "×" : "💬"}
+      </button>
+
+      {open && (
+        <div style={{
+          position: "fixed", bottom: 86, right: 22, width: 340, maxWidth: "calc(100vw - 32px)", height: 440,
+          maxHeight: "calc(100vh - 140px)", background: COLORS.card, border: `1px solid ${COLORS.border}`,
+          borderRadius: 14, display: "flex", flexDirection: "column", overflow: "hidden",
+          boxShadow: "0 16px 48px -12px rgba(0,0,0,0.6)", zIndex: 1000,
+        }}>
+          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${COLORS.border}`, fontWeight: 700, fontSize: 13, color: COLORS.text }}>
+            🤖 PortfolioTrack Assistant
+            <div style={{ fontSize: 10, fontWeight: 400, color: COLORS.dim, marginTop: 2 }}>Educational only — not financial advice</div>
+          </div>
+
+          <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+            {messages.length === 0 && (
+              <div style={{ fontSize: 12, color: COLORS.muted }}>
+                Ask me things like "what's a Sharpe ratio?" or "how is my portfolio doing?"
+              </div>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} style={{
+                alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                background: m.role === "user" ? COLORS.accent : COLORS.bg,
+                color: m.role === "user" ? "#fff" : COLORS.text,
+                border: m.role === "user" ? "none" : `1px solid ${COLORS.border}`,
+                borderRadius: 10, padding: "8px 11px", fontSize: 12.5, lineHeight: 1.45, maxWidth: "85%", whiteSpace: "pre-wrap",
+              }}>
+                {m.text}
+              </div>
+            ))}
+            {sending && <div style={{ fontSize: 12, color: COLORS.muted, alignSelf: "flex-start" }}>Thinking…</div>}
+            {err && <div style={{ fontSize: 11, color: COLORS.red, alignSelf: "flex-start" }}>{err}</div>}
+          </div>
+
+          <form onSubmit={send} style={{ display: "flex", gap: 6, padding: 10, borderTop: `1px solid ${COLORS.border}` }}>
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder="Ask a question…"
+              style={{ ...inputStyle, marginTop: 0, flex: 1 }}
+              disabled={sending}
+            />
+            <button type="submit" disabled={sending || !input.trim()} style={{ ...btnStyle, padding: "8px 14px", opacity: sending || !input.trim() ? 0.6 : 1 }}>
+              Send
+            </button>
+          </form>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1196,8 +1349,12 @@ function LeaderboardTab() {
       const byTicker = {};
       allTrades.forEach(t => {
         (byPortfolio[t.portfolio_id] = byPortfolio[t.portfolio_id] || []).push(t);
-        const b = (byTicker[t.ticker] = byTicker[t.ticker] || { shares: 0, cost: 0 });
-        b.shares += t.shares; b.cost += t.shares * t.price;
+        // Only buys feed the fallback average-price-paid estimate — a sell's execution
+        // price shouldn't pull a ticker's fallback price toward what a seller got.
+        if (t.side !== "sell") {
+          const b = (byTicker[t.ticker] = byTicker[t.ticker] || { shares: 0, cost: 0 });
+          b.shares += t.shares; b.cost += t.shares * t.price;
+        }
       });
       // Per-ticker fallback = volume-weighted average price actually paid across all trades,
       // so a failed/rate-limited price call never collapses a holding to $0.
@@ -1210,7 +1367,9 @@ function LeaderboardTab() {
 
       const ranked = portfolios.map(p => {
         const held = byPortfolio[p.id] || [];
-        const holdingsValue = held.reduce((s, t) => s + t.shares * (quoteCache[t.ticker] || 0), 0);
+        // Sells subtract shares — summing signed (shares × price) across every trade for a
+        // ticker equals net-shares-held × price, so no separate per-ticker netting pass is needed.
+        const holdingsValue = held.reduce((s, t) => s + (t.side === "sell" ? -t.shares : t.shares) * (quoteCache[t.ticker] || 0), 0);
         const totalValue = holdingsValue + p.cash_balance;
         const returnPct = ((totalValue - p.starting_cash) / p.starting_cash) * 100;
         return { ...p, totalValue, returnPct };
@@ -1414,6 +1573,83 @@ async function generateUniqueName() {
 const inputStyle = { display: "block", width: "100%", padding: "8px 10px", background: COLORS.bg, border: `1px solid ${COLORS.border}`, borderRadius: 6, color: COLORS.text, marginTop: 4 };
 const btnStyle = { padding: "9px 16px", background: COLORS.accent, color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 600, fontSize: 13 };
 
+// A single holding with an inline sell form. Kept as its own component so each
+// row's open/closed sell state doesn't re-render the whole holdings list.
+function HoldingRow({ p, price, isLive, onSell }) {
+  const [open, setOpen] = useState(false);
+  const [shares, setShares] = useState("");
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const avgCost = p.shares > 0 ? p.costBasis / p.shares : 0;
+  const currentValue = (price ?? avgCost) * p.shares;
+  const gainLoss = currentValue - p.costBasis;
+  const gainLossPct = p.costBasis > 0 ? (gainLoss / p.costBasis) * 100 : 0;
+  const sellQty = parseFloat(shares);
+
+  async function submitSell(e) {
+    e.preventDefault();
+    setErr("");
+    if (!sellQty || sellQty <= 0) { setErr("Enter a share amount."); return; }
+    if (sellQty > p.shares + 1e-9) { setErr(`You only hold ${p.shares.toFixed(3)} shares.`); return; }
+    if (!price) { setErr("Price unavailable — hit Refresh above first."); return; }
+    setLoading(true);
+    const res = await onSell(p.ticker, sellQty, price);
+    setLoading(false);
+    if (res?.error) { setErr(res.error); return; }
+    setOpen(false); setShares("");
+  }
+
+  return (
+    <div style={{ borderBottom: `1px solid ${COLORS.bg}`, padding: "8px 0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, gap: 8 }}>
+        <span style={{ fontWeight: 700, color: COLORS.text, display: "flex", alignItems: "center", gap: 6 }}>
+          {p.ticker}
+          {isLive && <span title="Live price" style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.green, display: "inline-block" }} />}
+        </span>
+        <span style={{ color: COLORS.muted }}>{p.shares.toFixed(3)} sh {price ? `@ ${fmt(price)}` : ""}</span>
+        <span style={{ color: "#94a3b8" }}>{fmt(currentValue)}</span>
+        <span style={{ color: gainLoss >= 0 ? COLORS.green : COLORS.red, minWidth: 70, textAlign: "right" }}>
+          {price ? pct(gainLossPct) : "—"}
+        </span>
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          style={{ ...btnStyle, padding: "4px 10px", fontSize: 11, background: COLORS.bg, border: `1px solid ${COLORS.border}`, color: COLORS.text, flexShrink: 0 }}
+        >
+          {open ? "Cancel" : "Sell"}
+        </button>
+      </div>
+
+      {open && (
+        <form onSubmit={submitSell} style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, flexWrap: "wrap" }}>
+          <input
+            type="number" step="any" min="0" max={p.shares} placeholder="Shares to sell" value={shares}
+            onChange={e => setShares(e.target.value)}
+            style={{ ...inputStyle, marginTop: 0, width: 130 }}
+          />
+          <button
+            type="button"
+            onClick={() => setShares(String(p.shares))}
+            style={{ ...btnStyle, padding: "6px 10px", fontSize: 11, background: COLORS.bg, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
+          >
+            Sell all
+          </button>
+          <button type="submit" disabled={loading || !price} style={{ ...btnStyle, padding: "6px 14px", fontSize: 12, opacity: loading || !price ? 0.6 : 1 }}>
+            {loading ? "Selling…" : "Confirm sell"}
+          </button>
+          {!!sellQty && price && (
+            <span style={{ fontSize: 11, color: COLORS.dim }}>
+              ≈ {fmt(sellQty * price)} proceeds, {(sellQty * price - avgCost * sellQty) >= 0 ? "+" : ""}{fmt(sellQty * price - avgCost * sellQty)} realized
+            </span>
+          )}
+          {err && <div style={{ width: "100%", color: COLORS.red, fontSize: 11 }}>{err}</div>}
+        </form>
+      )}
+    </div>
+  );
+}
+
 function MyPortfolioTab({ user, myPortfolio, onAuthed, onLogout, onTraded }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -1436,15 +1672,29 @@ function MyPortfolioTab({ user, myPortfolio, onAuthed, onLogout, onTraded }) {
 
   useEffect(() => { if (myPortfolio) loadHoldings(); }, [myPortfolio]);
 
-  // Aggregate raw trade rows into one position per ticker (total shares + cost basis)
-  const positions = Object.values(
-    holdings.reduce((acc, t) => {
+  // Aggregate raw trade rows into one position per ticker using average-cost accounting.
+  // Trades must be processed in the order they happened (loadHoldings orders by id) since
+  // a sell's realized gain/loss depends on the average cost basis *at that point in time*.
+  const { positions, realizedTotal } = (() => {
+    const acc = {};
+    let realizedTotal = 0;
+    holdings.forEach(t => {
       if (!acc[t.ticker]) acc[t.ticker] = { ticker: t.ticker, shares: 0, costBasis: 0 };
-      acc[t.ticker].shares += t.shares;
-      acc[t.ticker].costBasis += t.amount;
-      return acc;
-    }, {})
-  );
+      const pos = acc[t.ticker];
+      if (t.side === "sell") {
+        const avgCost = pos.shares > 0 ? pos.costBasis / pos.shares : 0;
+        const costRemoved = avgCost * t.shares;
+        realizedTotal += t.amount - costRemoved;
+        pos.shares -= t.shares;
+        pos.costBasis -= costRemoved;
+      } else {
+        pos.shares += t.shares;
+        pos.costBasis += t.amount;
+      }
+    });
+    // Drop fully-closed positions (shares ~0) so they don't show as a $0 row
+    return { positions: Object.values(acc).filter(p => p.shares > 1e-6), realizedTotal };
+  })();
 
   const refreshLivePrices = useCallback(async (tickers) => {
     if (!tickers.length) return;
@@ -1471,7 +1721,7 @@ function MyPortfolioTab({ user, myPortfolio, onAuthed, onLogout, onTraded }) {
   }, [holdings.length, refreshLivePrices]);
 
   async function loadHoldings() {
-    const { data } = await supabase.from("trades").select("*").eq("portfolio_id", myPortfolio.id);
+    const { data } = await supabase.from("trades").select("*").eq("portfolio_id", myPortfolio.id).order("id");
     setHoldings(data || []);
   }
 
@@ -1521,13 +1771,28 @@ function MyPortfolioTab({ user, myPortfolio, onAuthed, onLogout, onTraded }) {
 
     setTradeLoading(true);
     const shares = dollarAmount / quote;
-    const { error: tErr } = await supabase.from("trades").insert({ portfolio_id: myPortfolio.id, ticker: ticker.toUpperCase(), shares, price: quote, amount: dollarAmount });
+    const { error: tErr } = await supabase.from("trades").insert({ portfolio_id: myPortfolio.id, ticker: ticker.toUpperCase(), shares, price: quote, amount: dollarAmount, side: "buy" });
     if (tErr) { setTradeError(tErr.message); setTradeLoading(false); return; }
     const { error: bErr } = await supabase.from("portfolios").update({ cash_balance: myPortfolio.cash_balance - dollarAmount }).eq("id", myPortfolio.id);
     setTradeLoading(false);
     if (bErr) { setTradeError(bErr.message); return; }
     setTicker(""); setAmount(""); setQuote(null);
     onTraded(); loadHoldings();
+  }
+
+  // Records a sell trade and credits the sale proceeds back to cash. `sharesToSell` and
+  // `currentPrice` come from the holding row (validated there); amount = proceeds, matching
+  // how "amount" already means the trade's cash value for buys.
+  async function handleSell(tickerSym, sharesToSell, currentPrice) {
+    const proceeds = sharesToSell * currentPrice;
+    const { error: tErr } = await supabase.from("trades").insert({
+      portfolio_id: myPortfolio.id, ticker: tickerSym, shares: sharesToSell, price: currentPrice, amount: proceeds, side: "sell",
+    });
+    if (tErr) return { error: tErr.message };
+    const { error: bErr } = await supabase.from("portfolios").update({ cash_balance: myPortfolio.cash_balance + proceeds }).eq("id", myPortfolio.id);
+    if (bErr) return { error: bErr.message };
+    onTraded(); await loadHoldings();
+    return {};
   }
 
   if (!user) {
@@ -1592,10 +1857,11 @@ function MyPortfolioTab({ user, myPortfolio, onAuthed, onLogout, onTraded }) {
         <button onClick={onLogout} style={{ ...btnStyle, background: COLORS.card, border: `1px solid ${COLORS.border}`, color: COLORS.text }}>Log out</button>
       </div>
 
-      {positions.length > 0 && (
+      {(positions.length > 0 || realizedTotal !== 0) && (
         <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
           <StatCard label="Total Portfolio Value" value={fmt(totalValue)} sub={pricesLoading ? "Updating…" : anyLive ? "Live pricing" : "Using last known price"} color={COLORS.text} size="lg" />
           <StatCard label="Total Gain / Loss" value={pct(totalGLPct)} sub={`${totalGL >= 0 ? "+" : ""}${fmt(totalGL)} vs $100,000 start`} color={totalGL >= 0 ? COLORS.green : COLORS.red} size="lg" />
+          <StatCard label="Realized Gain / Loss" value={`${realizedTotal >= 0 ? "+" : ""}${fmt(realizedTotal)}`} sub="From closed positions" color={realizedTotal >= 0 ? COLORS.green : COLORS.red} size="lg" />
         </div>
       )}
 
@@ -1631,26 +1897,15 @@ function MyPortfolioTab({ user, myPortfolio, onAuthed, onLogout, onTraded }) {
               </button>
             </div>
           </div>
-          {positions.map(p => {
-            const price = livePrices[p.ticker];
-            const currentValue = (price ?? (p.costBasis / p.shares)) * p.shares;
-            const gainLoss = currentValue - p.costBasis;
-            const gainLossPct = (gainLoss / p.costBasis) * 100;
-            const isLive = priceStatus[p.ticker] === "live";
-            return (
-              <div key={p.ticker} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${COLORS.bg}`, fontSize: 13 }}>
-                <span style={{ fontWeight: 700, color: COLORS.text, display: "flex", alignItems: "center", gap: 6 }}>
-                  {p.ticker}
-                  {isLive && <span title="Live price" style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.green, display: "inline-block" }} />}
-                </span>
-                <span style={{ color: COLORS.muted }}>{p.shares.toFixed(3)} sh {price ? `@ ${fmt(price)}` : ""}</span>
-                <span style={{ color: "#94a3b8" }}>{fmt(currentValue)}</span>
-                <span style={{ color: gainLoss >= 0 ? COLORS.green : COLORS.red, minWidth: 70, textAlign: "right" }}>
-                  {price ? pct(gainLossPct) : "—"}
-                </span>
-              </div>
-            );
-          })}
+          {positions.map(p => (
+            <HoldingRow
+              key={p.ticker}
+              p={p}
+              price={livePrices[p.ticker]}
+              isLive={priceStatus[p.ticker] === "live"}
+              onSell={handleSell}
+            />
+          ))}
         </div>
       )}
     </div>
