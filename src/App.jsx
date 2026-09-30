@@ -146,19 +146,6 @@ const EDUCATION_CONTENT = [
   { id:"diversification", title:"Diversification", category:"Strategy", icon:"🎯", summary:"Spreading investments across different assets to reduce risk without sacrificing return.", detail:"Diversification works because different assets don't move in perfect sync. When tech drops, defensive stocks like BRK.B hold up. Your portfolio has some diversification (ETFs + individual stocks) but is heavily concentrated in Technology sector (~65%+). True diversification would include bonds, international stocks, and real estate.", example:"Tech-only portfolio vs. Tech + Finance + Healthcare + Bonds portfolio — same return, much lower risk", quiz:{q:"Which portfolio is best diversified?", options:["10 tech stocks","5 stocks across 5 sectors","VOO + BND + International ETF","2 stocks"], answer:2} },
 ];
 
-const CHANGELOG = [
-  { version:"2.1.0", date:"Sep 2026", type:"minor", notes:["Added Sell (with average-cost realized gain/loss)","AI Assistant powered by Gemini","Leaderboard search, tabs, and pagination for 1,000+ players","Auto-generated, uniqueness-checked leaderboard display names","Users section in Platform Stats","Corrected stale date/dollar labels on the dashboard"] },
-  { version:"2.0.0", date:"Jul 2026", type:"major", notes:["Full platform rebuild — PortfolioTrack v2","Advanced analytics: CAGR, Sharpe, Beta, Alpha, Max Drawdown","Portfolio Health Score (0-100)","Education Center with interactive quizzes","Public roadmap and changelog","Sector allocation and diversification analysis","Comparison vs S&P 500 benchmark"] },
-  { version:"1.1.0", date:"Jul 2026", type:"minor", notes:["Added Monthly Analysis tab with market narrative","Added Trade Log with rationale for each entry","Gradient header accent bar","Jon Ong branding and footer"] },
-  { version:"1.0.0", date:"Jul 2026", type:"major", notes:["Initial launch of PortfolioTrack","9 positions across 4 trades","Month-by-month historical tracking","Holdings and overview tabs"] },
-];
-
-const ROADMAP = [
-  { quarter:"Q3 2026", status:"current", items:["User portfolio builder (add your own stocks)","Real-time price alerts","PDF export of portfolio report","Mobile app (iOS)"] },
-  { quarter:"Q4 2026", status:"planned", items:["Social portfolio sharing","Options tracking","Dividend reinvestment modeling","Tax loss harvesting calculator"] },
-  { quarter:"Q1 2027", status:"future", items:["Multi-currency support","International markets","AI-powered rebalancing suggestions","Broker account integration"] },
-];
-
 // ─── UTILITIES ────────────────────────────────────────────────────────────────
 const fmt = (n) => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2}).format(n);
 const pct = (n,d=2) => `${n>=0?"+":""}${n.toFixed(d)}%`;
@@ -319,7 +306,6 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [myPortfolio, setMyPortfolio] = useState(null);
   const [communityCount, setCommunityCount] = useState(null);
-  const [communityTradeCount, setCommunityTradeCount] = useState(null);
 
   const fetchAll = useCallback(async (portfolioKey) => {
     const pf = PORTFOLIOS[portfolioKey];
@@ -337,7 +323,6 @@ export default function App() {
   useEffect(()=>{
     supabase.auth.getSession().then(({data})=>{ if(data.session) loadMyPortfolio(data.session.user); });
     supabase.from("portfolios").select("*",{count:"exact",head:true}).then(({count})=>setCommunityCount(count??0));
-    supabase.from("trades").select("*",{count:"exact",head:true}).then(({count})=>setCommunityTradeCount(count??0));
   },[]);
 
   async function loadMyPortfolio(authedUser) {
@@ -574,90 +559,25 @@ export default function App() {
               </div>
             </div>
 
-            {/* ── Roadmap & Changelog (moved from its own tab to the end of Home) ── */}
-            <div style={{marginTop:48}}>
-              <div style={{fontSize:11,color:COLORS.dim,textTransform:"uppercase",letterSpacing:"0.12em",textAlign:"center",marginBottom:24}}>What's Been Built, What's Next</div>
-
-              {/* Roadmap */}
-              <div style={{marginBottom:32}}>
-                <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:16}}>Development Roadmap</div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:14}}>
-                  {ROADMAP.map((q,i)=>(
-                    <div key={i} style={{background:COLORS.card,border:`1px solid ${q.status==="current"?COLORS.accent:COLORS.border}`,borderTop:`3px solid ${q.status==="current"?COLORS.accent:q.status==="planned"?COLORS.yellow:"#1a2540"}`,borderRadius:12,padding:"16px 18px"}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                        <div style={{fontSize:14,fontWeight:700,color:COLORS.text}}>{q.quarter}</div>
-                        <Badge text={q.status==="current"?"In Progress":q.status==="planned"?"Planned":"Future"} color={q.status==="current"?COLORS.green:q.status==="planned"?COLORS.yellow:COLORS.muted} bg={q.status==="current"?"#0a2a1a":q.status==="planned"?"#2a1a0a":"#1a2540"} />
-                      </div>
-                      {q.items.map((item,j)=>(
-                        <div key={j} style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:8}}>
-                          <div style={{width:5,height:5,borderRadius:"50%",background:q.status==="current"?COLORS.accent:COLORS.dim,flexShrink:0,marginTop:4}} />
-                          <div style={{fontSize:12,color:q.status==="current"?COLORS.text:COLORS.muted,lineHeight:1.4}}>{item}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Changelog */}
-              <div>
-                <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:16}}>Changelog</div>
-                {CHANGELOG.map((c,i)=>(
-                  <div key={i} style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"16px 20px",marginBottom:12}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
-                      <Badge text={`v${c.version}`} color={COLORS.accentLight} bg="#191b4a" />
-                      <Badge text={c.type==="major"?"Major Release":"Minor Update"} color={c.type==="major"?COLORS.green:COLORS.yellow} bg={c.type==="major"?"#0a2a1a":"#2a1a0a"} />
-                      <span style={{fontSize:11,color:COLORS.dim}}>{c.date}</span>
-                    </div>
-                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                      {c.notes.map((n,j)=>(
-                        <div key={j} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
-                          <span style={{fontSize:11,color:COLORS.accent,marginTop:1}}>+</span>
-                          <span style={{fontSize:12,color:"#94a3b8",lineHeight:1.4}}>{n}</span>
-                        </div>
-                      ))}
-                    </div>
+            {/* Platform Stats */}
+            <div style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"18px 22px",marginTop:48}}>
+              <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:14}}>Platform Stats</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:14}}>
+                {[
+                  {label:"Portfolios Tracked",value:"1",sub:"Jon Ong"},
+                  {label:"Positions Monitored",value:String(TRADES.length),sub:`across ${TRADES.length} trades`},
+                  {label:"Months of Data",value:String(monthsOfData),sub:"Nov '23 → Now"},
+                  {label:"Metrics Calculated",value:"10+",sub:"per portfolio"},
+                  {label:"Features Shipped",value:"v2.1",sub:"this session"},
+                  {label:"Registered Users",value:communityCount!==null?communityCount.toLocaleString():"—",sub:"worldwide"},
+                  {label:"Community Portfolios",value:communityCount!==null?communityCount.toLocaleString():"—",sub:"and counting"},
+                ].map((s,i)=>(
+                  <div key={i} style={{textAlign:"center"}}>
+                    <div style={{fontSize:24,fontWeight:800,color:COLORS.accentLight}}>{s.value}</div>
+                    <div style={{fontSize:10,color:COLORS.text,fontWeight:600,marginTop:2}}>{s.label}</div>
+                    <div style={{fontSize:10,color:COLORS.dim}}>{s.sub}</div>
                   </div>
                 ))}
-              </div>
-
-              {/* Impact metrics */}
-              <div style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"18px 22px",marginTop:8}}>
-                <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:14}}>Platform Stats</div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:14}}>
-                  {[
-                    {label:"Portfolios Tracked",value:"1",sub:"Jon Ong"},
-                    {label:"Positions Monitored",value:String(TRADES.length),sub:`across ${TRADES.length} trades`},
-                    {label:"Months of Data",value:String(monthsOfData),sub:"Nov '23 → Now"},
-                    {label:"Metrics Calculated",value:"10+",sub:"per portfolio"},
-                    {label:"Features Shipped",value:"v2.1",sub:"this session"},
-                  ].map((s,i)=>(
-                    <div key={i} style={{textAlign:"center"}}>
-                      <div style={{fontSize:24,fontWeight:800,color:COLORS.accentLight}}>{s.value}</div>
-                      <div style={{fontSize:10,color:COLORS.text,fontWeight:600,marginTop:2}}>{s.label}</div>
-                      <div style={{fontSize:10,color:COLORS.dim}}>{s.sub}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Users / community metrics */}
-              <div style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"18px 22px",marginTop:16}}>
-                <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:14}}>Users</div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:14}}>
-                  {[
-                    {label:"Registered Users",value:communityCount!==null?communityCount.toLocaleString():"—",sub:"community-wide"},
-                    {label:"Community Trades",value:communityTradeCount!==null?communityTradeCount.toLocaleString():"—",sub:"buy & sell orders"},
-                    {label:"Starting Capital",value:"$100,000",sub:"per new user"},
-                    {label:"You're Logged In As",value:user?(myPortfolio?.display_name||"—"):"Guest",sub:user?"tracked on leaderboard":"sign up to join"},
-                  ].map((s,i)=>(
-                    <div key={i} style={{textAlign:"center"}}>
-                      <div style={{fontSize:24,fontWeight:800,color:COLORS.accentLight}}>{s.value}</div>
-                      <div style={{fontSize:10,color:COLORS.text,fontWeight:600,marginTop:2}}>{s.label}</div>
-                      <div style={{fontSize:10,color:COLORS.dim}}>{s.sub}</div>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
