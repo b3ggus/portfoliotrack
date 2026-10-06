@@ -98,6 +98,7 @@ const MONTHLY_HISTORY = [
   { month:"Jun '26", label:"Jun 30", VOO:678.00, NVDA:207.00, AAPL:302.00, MSFT:392.00, AMZN:248.00, "BRK.B":490.00, TSLA:624.33, JPM:374.31, XOM:117.22, COST:1281.64, META:595.00, GOOGL:372.00, QQQ:516.00, sp500:7474, note:"Tech consolidates -1.1%. AAPL hits ATH $317.40 Jun 8." },
   { month:"Jul '26", label:"Jul 31", VOO:692.00, NVDA:224.00, AAPL:308.00, MSFT:405.00, AMZN:256.00, "BRK.B":495.00, TSLA:650.72, JPM:366.76, XOM:116.05, COST:1294.38, META:615.00, GOOGL:385.00, QQQ:535.00, sp500:7645, note:"Q2 earnings season broadly strong. NVDA rebounds 8% on datacenter demand beat. QQQ crosses $530 for the first time." },
   { month:"Aug '26", label:"Aug 31", VOO:705.00, NVDA:238.00, AAPL:315.00, MSFT:418.00, AMZN:262.00, "BRK.B":500.00, TSLA:666.42, JPM:361.88, XOM:111.22, COST:1316.22, META:630.00, GOOGL:398.00, QQQ:548.00, sp500:7790, note:"Fed signals a September rate cut. NVDA jumps on next-gen AI chip announcement. GOOGL crosses $395 on cloud growth." },
+  { month:"Sep '26", label:"Sep 30", VOO:700.00, NVDA:227.00, AAPL:333.02, MSFT:512.90, AMZN:249.15, "BRK.B":502.50, TSLA:354.81, JPM:330.33, XOM:161.35, COST:910.34, META:741.00, GOOGL:344.08, QQQ:709.00, sp500:7652, note:"Treasury yields surge (10-yr ~5.3%) and rate-hike bets build; S&P -0.5% but ~75% of members fall. META +~29% on the Muse AI launch — best month since 2013." },
 ];
 
 const MONTHLY_ANALYSIS = [
@@ -135,6 +136,7 @@ const MONTHLY_ANALYSIS = [
   { month:"Jun '26", spReturn:"-1.1%", summary:"After May's fireworks, June brought a mild and honestly healthy pullback. NVDA gave back 12% from its all-time high as some of the AI-mania froth cooled off, a normal-looking consolidation rather than anything resembling the DeepSeek-style shock from the year before. AAPL, meanwhile, kept climbing its own separate path and hit an all-time high of $317.40 on June 8 — up 58% from its original purchase price, making it arguably the single best-performing position in the whole portfolio at this point. QQQ, barely a month old in the portfolio, gained 5% in its first full month, a promising start for the newest addition. With the S&P down just 1.1% and holding well above the 7,000 level it had crossed in April, this read much more like digestion of recent gains than the start of anything worrying.", best:{ticker:"AAPL",reason:"ATH $317.40 Jun 8 — up 58% from your buy"}, worst:{ticker:"NVDA",reason:"Pulled back 12% from ATH on profit taking"}, events:["AAPL ATH $317.40 Jun 8","NVDA -12% from ATH","S&P -1.1% healthy consolidation"], change:"+$2,800" },
   { month:"Jul '26", spReturn:"+2.29%", summary:"A strong Q2 earnings season lifted the whole portfolio in July, with results broadly beating estimates across the board. NVDA was the standout, rebounding 8% on a datacenter demand beat that effectively erased June's pullback and reaffirmed the AI infrastructure story that had driven so much of the portfolio's gains over the past year and a half. GOOGL and QQQ both pushed to new highs on continued AI infrastructure spending, with QQQ in particular crossing $530 for the first time since its addition back in May. BRK.B was, once again, the slowest mover of the group — a role it had settled into consistently across nearly every growth-led month in the portfolio's history. With gains showing up across all 13 positions now held, July felt like a genuinely broad-based, healthy month rather than one carried by a single name.", best:{ticker:"NVDA",reason:"Rebounded 8% on strong Q2 datacenter earnings"}, worst:{ticker:"BRK.B",reason:"Steady but the slowest mover in a growth-led month"}, events:["Q2 earnings season broadly beats estimates","NVDA +8% on datacenter demand beat","QQQ crosses $530 for the first time"], change:"+$5,600" },
   { month:"Aug '26", spReturn:"+1.90%", summary:"August continued the steady grind higher that July had established. The Fed signaled a likely September rate cut, which gave growth stocks room to run without the kind of hawkish surprise that had derailed the market back in December 2024. NVDA led the portfolio again, this time on the back of a next-gen AI chip announcement that pushed the stock up roughly 6% on the month — yet another reminder of just how much of the portfolio's overall performance has traced back to NVDA's ups and downs since day one. GOOGL kept building on its post-February-buy strength, pushing past $395 on continued cloud growth. BRK.B lagged again as value continued taking a back seat to growth in what had become a familiar pattern through most of the tracked period.", best:{ticker:"NVDA",reason:"Jumped on next-gen AI chip announcement, up ~6% on the month"}, worst:{ticker:"BRK.B",reason:"Slowest mover as growth outpaced value"}, events:["Fed signals September rate cut","NVDA unveils next-gen AI chip roadmap","GOOGL crosses $395 on cloud growth","S&P +1.90%"], change:"+$4,900" },
+  { month:"Sep '26", spReturn:"-0.5%", summary:"September broke the summer's steady climb. A violent move in Treasury yields — the 10-year near 5.3% and the 30-year around 5.6%, levels not seen since 2007 — plus Brent back above $100 revived rate-hike talk, and rate-sensitive sectors took the brunt: financials, utilities, consumer discretionary and staples all fell sharply while technology was the only S&P sector to finish higher. The headline S&P 500 slipped about 0.5% (closing at 7,651.54 on Sept 30), but roughly three-quarters of its members declined, and the Dow dropped over 4%. The portfolio's standout was META, which surged roughly 29% after launching its Muse AI agent on Sept 8 — including an 11% one-day jump on Sept 21 — for its best month since 2013. JPM was the clear laggard as bank stocks sold off with the yield spike, and COST slid after earnings on valuation concerns. Fed Vice Chair Williams pushing back on back-to-back hikes, and a cooler-than-expected PCE print on the last day of the month, cut the odds of an October hike but did not stop the month-end wobble.", best:{ticker:"META",reason:"Muse AI launch sparked a ~29% rally — best month since 2013"}, worst:{ticker:"JPM",reason:"Banks sold off as Treasury yields spiked to 2007 highs"}, events:["META launches Muse AI agent Sept 8; +11% on Sept 21","10-yr Treasury yield jumps to ~5.3%, highest since 2007","Brent crude back above $100","Cooler PCE on Sept 30 trims October rate-hike odds","S&P -0.5% (7,651.54); Dow -4%+; Q3 ends +2%"], change:"-$2,800" },
 ];
 
 const EDUCATION_CONTENT = [
@@ -144,6 +146,19 @@ const EDUCATION_CONTENT = [
   { id:"alpha", title:"Alpha", category:"Returns", icon:"α", summary:"The return your portfolio generates above what market exposure alone would predict.", detail:"Alpha is the holy grail. It's the 'skill' portion of your returns — what you earned beyond what a passive index fund would have delivered. Positive alpha means your stock picks outperformed. Negative alpha means you'd have done better just buying VOO.", example:"Portfolio +18%, S&P +15% (adjusted for beta) → Alpha = +3%", quiz:{q:"If your portfolio returns 12% and the market returns 12%, what is your alpha (simplified)?", options:["+12%","0%","-12%","Can't calculate"], answer:1} },
   { id:"drawdown", title:"Maximum Drawdown", category:"Risk", icon:"📉", summary:"The largest peak-to-trough decline your portfolio experienced.", detail:"Maximum Drawdown answers: 'What's the worst I would have felt holding this?' It measures the biggest drop from a portfolio's highest point to its lowest before recovering. Your portfolio experienced its worst drawdown during the March 2026 Liberation Day crash.", example:"Portfolio peaks at $140K, drops to $118K → Max Drawdown = -15.7%", quiz:{q:"Portfolio goes $100K → $130K → $105K → $145K. What is max drawdown?", options:["-15%","-19.2%","-28%","-5%"], answer:1} },
   { id:"diversification", title:"Diversification", category:"Strategy", icon:"🎯", summary:"Spreading investments across different assets to reduce risk without sacrificing return.", detail:"Diversification works because different assets don't move in perfect sync. When tech drops, defensive stocks like BRK.B hold up. Your portfolio has some diversification (ETFs + individual stocks) but is heavily concentrated in Technology sector (~65%+). True diversification would include bonds, international stocks, and real estate.", example:"Tech-only portfolio vs. Tech + Finance + Healthcare + Bonds portfolio — same return, much lower risk", quiz:{q:"Which portfolio is best diversified?", options:["10 tech stocks","5 stocks across 5 sectors","VOO + BND + International ETF","2 stocks"], answer:2} },
+];
+
+const CHANGELOG = [
+  { version:"2.1.0", date:"Sep 2026", type:"minor", notes:["Added Sell (with average-cost realized gain/loss)","AI Assistant powered by Gemini","Leaderboard search, tabs, and pagination for 1,000+ players","Auto-generated, uniqueness-checked leaderboard display names","Users section in Platform Stats","Corrected stale date/dollar labels on the dashboard"] },
+  { version:"2.0.0", date:"Jul 2026", type:"major", notes:["Full platform rebuild — PortfolioTrack v2","Advanced analytics: CAGR, Sharpe, Beta, Alpha, Max Drawdown","Portfolio Health Score (0-100)","Education Center with interactive quizzes","Public roadmap and changelog","Sector allocation and diversification analysis","Comparison vs S&P 500 benchmark"] },
+  { version:"1.1.0", date:"Jul 2026", type:"minor", notes:["Added Monthly Analysis tab with market narrative","Added Trade Log with rationale for each entry","Gradient header accent bar","Jon Ong branding and footer"] },
+  { version:"1.0.0", date:"Jul 2026", type:"major", notes:["Initial launch of PortfolioTrack","9 positions across 4 trades","Month-by-month historical tracking","Holdings and overview tabs"] },
+];
+
+const ROADMAP = [
+  { quarter:"Q3 2026", status:"current", items:["User portfolio builder (add your own stocks)","Real-time price alerts","PDF export of portfolio report","Mobile app (iOS)"] },
+  { quarter:"Q4 2026", status:"planned", items:["Social portfolio sharing","Options tracking","Dividend reinvestment modeling","Tax loss harvesting calculator"] },
+  { quarter:"Q1 2027", status:"future", items:["Multi-currency support","International markets","AI-powered rebalancing suggestions","Broker account integration"] },
 ];
 
 // ─── UTILITIES ────────────────────────────────────────────────────────────────
@@ -306,6 +321,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [myPortfolio, setMyPortfolio] = useState(null);
   const [communityCount, setCommunityCount] = useState(null);
+  const [communityTradeCount, setCommunityTradeCount] = useState(null);
 
   const fetchAll = useCallback(async (portfolioKey) => {
     const pf = PORTFOLIOS[portfolioKey];
@@ -323,6 +339,7 @@ export default function App() {
   useEffect(()=>{
     supabase.auth.getSession().then(({data})=>{ if(data.session) loadMyPortfolio(data.session.user); });
     supabase.from("portfolios").select("*",{count:"exact",head:true}).then(({count})=>setCommunityCount(count??0));
+    supabase.from("trades").select("*",{count:"exact",head:true}).then(({count})=>setCommunityTradeCount(count??0));
   },[]);
 
   async function loadMyPortfolio(authedUser) {
@@ -559,25 +576,90 @@ export default function App() {
               </div>
             </div>
 
-            {/* Platform Stats */}
-            <div style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"18px 22px",marginTop:48}}>
-              <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:14}}>Platform Stats</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:14}}>
-                {[
-                  {label:"Portfolios Tracked",value:"1",sub:"Jon Ong"},
-                  {label:"Positions Monitored",value:String(TRADES.length),sub:`across ${TRADES.length} trades`},
-                  {label:"Months of Data",value:String(monthsOfData),sub:"Nov '23 → Now"},
-                  {label:"Metrics Calculated",value:"10+",sub:"per portfolio"},
-                  {label:"Features Shipped",value:"v2.1",sub:"this session"},
-                  {label:"Registered Users",value:communityCount!==null?communityCount.toLocaleString():"—",sub:"worldwide"},
-                  {label:"Community Portfolios",value:communityCount!==null?communityCount.toLocaleString():"—",sub:"and counting"},
-                ].map((s,i)=>(
-                  <div key={i} style={{textAlign:"center"}}>
-                    <div style={{fontSize:24,fontWeight:800,color:COLORS.accentLight}}>{s.value}</div>
-                    <div style={{fontSize:10,color:COLORS.text,fontWeight:600,marginTop:2}}>{s.label}</div>
-                    <div style={{fontSize:10,color:COLORS.dim}}>{s.sub}</div>
+            {/* ── Roadmap & Changelog (moved from its own tab to the end of Home) ── */}
+            <div style={{marginTop:48}}>
+              <div style={{fontSize:11,color:COLORS.dim,textTransform:"uppercase",letterSpacing:"0.12em",textAlign:"center",marginBottom:24}}>What's Been Built, What's Next</div>
+
+              {/* Roadmap */}
+              <div style={{marginBottom:32}}>
+                <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:16}}>Development Roadmap</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:14}}>
+                  {ROADMAP.map((q,i)=>(
+                    <div key={i} style={{background:COLORS.card,border:`1px solid ${q.status==="current"?COLORS.accent:COLORS.border}`,borderTop:`3px solid ${q.status==="current"?COLORS.accent:q.status==="planned"?COLORS.yellow:"#1a2540"}`,borderRadius:12,padding:"16px 18px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                        <div style={{fontSize:14,fontWeight:700,color:COLORS.text}}>{q.quarter}</div>
+                        <Badge text={q.status==="current"?"In Progress":q.status==="planned"?"Planned":"Future"} color={q.status==="current"?COLORS.green:q.status==="planned"?COLORS.yellow:COLORS.muted} bg={q.status==="current"?"#0a2a1a":q.status==="planned"?"#2a1a0a":"#1a2540"} />
+                      </div>
+                      {q.items.map((item,j)=>(
+                        <div key={j} style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:8}}>
+                          <div style={{width:5,height:5,borderRadius:"50%",background:q.status==="current"?COLORS.accent:COLORS.dim,flexShrink:0,marginTop:4}} />
+                          <div style={{fontSize:12,color:q.status==="current"?COLORS.text:COLORS.muted,lineHeight:1.4}}>{item}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Changelog */}
+              <div>
+                <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:16}}>Changelog</div>
+                {CHANGELOG.map((c,i)=>(
+                  <div key={i} style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"16px 20px",marginBottom:12}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+                      <Badge text={`v${c.version}`} color={COLORS.accentLight} bg="#191b4a" />
+                      <Badge text={c.type==="major"?"Major Release":"Minor Update"} color={c.type==="major"?COLORS.green:COLORS.yellow} bg={c.type==="major"?"#0a2a1a":"#2a1a0a"} />
+                      <span style={{fontSize:11,color:COLORS.dim}}>{c.date}</span>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                      {c.notes.map((n,j)=>(
+                        <div key={j} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                          <span style={{fontSize:11,color:COLORS.accent,marginTop:1}}>+</span>
+                          <span style={{fontSize:12,color:"#94a3b8",lineHeight:1.4}}>{n}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Impact metrics */}
+              <div style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"18px 22px",marginTop:8}}>
+                <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:14}}>Platform Stats</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:14}}>
+                  {[
+                    {label:"Portfolios Tracked",value:"1",sub:"Jon Ong"},
+                    {label:"Positions Monitored",value:String(TRADES.length),sub:`across ${TRADES.length} trades`},
+                    {label:"Months of Data",value:String(monthsOfData),sub:"Nov '23 → Now"},
+                    {label:"Metrics Calculated",value:"10+",sub:"per portfolio"},
+                    {label:"Features Shipped",value:"v2.1",sub:"this session"},
+                  ].map((s,i)=>(
+                    <div key={i} style={{textAlign:"center"}}>
+                      <div style={{fontSize:24,fontWeight:800,color:COLORS.accentLight}}>{s.value}</div>
+                      <div style={{fontSize:10,color:COLORS.text,fontWeight:600,marginTop:2}}>{s.label}</div>
+                      <div style={{fontSize:10,color:COLORS.dim}}>{s.sub}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Users / community metrics */}
+              <div style={{background:COLORS.card,border:`1px solid ${COLORS.border}`,borderRadius:12,padding:"18px 22px",marginTop:16}}>
+                <div style={{fontSize:13,fontWeight:600,color:"#94a3b8",marginBottom:14}}>Users</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:14}}>
+                  {[
+                    {label:"Registered Users",value:communityCount!==null?communityCount.toLocaleString():"—",sub:"community-wide"},
+                    {label:"Community Trades",value:communityTradeCount!==null?communityTradeCount.toLocaleString():"—",sub:"buy & sell orders"},
+                    {label:"Starting Capital",value:"$100,000",sub:"per new user"},
+                    {label:"You're Logged In As",value:user?(myPortfolio?.display_name||"—"):"Guest",sub:user?"tracked on leaderboard":"sign up to join"},
+                  ].map((s,i)=>(
+                    <div key={i} style={{textAlign:"center"}}>
+                      <div style={{fontSize:24,fontWeight:800,color:COLORS.accentLight}}>{s.value}</div>
+                      <div style={{fontSize:10,color:COLORS.text,fontWeight:600,marginTop:2}}>{s.label}</div>
+                      <div style={{fontSize:10,color:COLORS.dim}}>{s.sub}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
